@@ -41,6 +41,7 @@ local MESSAGES = {
     Addon.messages.huntEnded,
     Addon.messages.petHappiness,
     Addon.messages.petDied,
+    Addon.messages.petState,
     Addon.messages.petTamed,
 }
 

@@ -2,9 +2,9 @@ local _, ns = ...
 
 -- The feed button beside the pet frame. Only a secure button the player presses may cast Feed Pet
 -- on a bag slot, so its macro text holds the first food's slot; the module rewrites it outside
--- combat. It shows while the pet is not happy and not eating (Feed Pet Effect on it): neither is a
--- macro condition, so the module
--- shows and hides it itself, also only outside combat (Feed Pet cannot be cast in combat anyway).
+-- combat. It shows while the pet is alive (Huntsworn.PetState), not happy and not eating (Feed Pet
+-- Effect on it): none is a macro condition, so the module shows and hides it itself, also only
+-- outside combat (Feed Pet cannot be cast in combat anyway).
 -- The border shows the happiness; the tooltip the feeding order. Shift-drag moves it; the place
 -- is kept per profile.
 
@@ -80,7 +80,7 @@ function M:ApplyButton()
         self:PlaceButton()
         local _, feedIcon = Addon.SpellInfo(M.FEED_PET)
         icon:SetTexture(first and C_Item.GetItemIconByID(first.itemID) or feedIcon)
-        local watching = active and UnitExists("pet")
+        local watching = active and Addon.PetState() == "alive"
         local happiness = watching and M.Happiness() or H.happy
         local mood = HAPPINESS[happiness]
         SetBorderColor = SetBorderColor or Addon:StyleButton(button, { icon = icon, group = "Feeding" })

@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -- Huntsworn:Listen, and the core's sources: messages about the pet out that the core works out from
--- game events (HUNTSWORN_PET_HAPPINESS, _DIED, _TAMED, _GROWTH). One source serves every
+-- game events (HUNTSWORN_PET_HAPPINESS, _STATE, _DIED, _TAMED, _GROWTH). One source serves every
 -- listener, Huntsworn's own modules and other addons alike, and watches the game only while at least
 -- one listens through Listen. A message a module sends itself needs no source; Listen hands it on
 -- just the same (docs\04-hooking.md).
@@ -66,7 +66,7 @@ end
 -- HUNTSWORN_PET_HAPPINESS: the pet out's happiness changed; before is nil for a pet just out.
 ---@type AddonSource
 local happiness = { events = { "UNIT_HAPPINESS", "PET_UI_UPDATE", "UNIT_PET" } }
-sources.HUNTSWORN_PET_HAPPINESS = happiness
+sources[Addon.messages.petHappiness] = happiness
 
 function happiness:Start()
     self.guid, self.last = nil, nil
@@ -112,10 +112,47 @@ local function PetDead()
     return UnitExists("pet") and UnitIsDead("pet") == true
 end
 
+---The pet out's state, shared by every button about the pet: alive, dead (its body still out), or
+---none.
+---@return "alive"|"dead"|"none"
+function Addon.PetState()
+    if not UnitExists("pet") then return "none" end
+    return PetDead() and "dead" or "alive"
+end
+
+-- HUNTSWORN_PET_STATE: the pet out became alive, dead or none; before is what it was.
+---@type AddonSource
+local state = { events = { "UNIT_HEALTH", "UNIT_PET" } }
+sources[Addon.messages.petState] = state
+
+function state:Start()
+    self.state = Addon.PetState()
+end
+
+---Sends the message when the state changed.
+function state:Check()
+    local now = Addon.PetState()
+    if now == self.state then return end
+    Addon:SendMessage(Addon.messages.petState, { state = now, before = self.state })
+    self.state = now
+end
+
+---@param _ string the event
+---@param unit string
+function state:UNIT_HEALTH(_, unit)
+    if unit == "pet" then self:Check() end
+end
+
+---@param _ string the event
+---@param unit string
+function state:UNIT_PET(_, unit)
+    if unit == "player" then self:Check() end
+end
+
 -- HUNTSWORN_PET_DIED: the pet out died, seen going from alive to dead.
 ---@type AddonSource
 local death = { events = { "UNIT_HEALTH", "UNIT_PET" } }
-sources.HUNTSWORN_PET_DIED = death
+sources[Addon.messages.petDied] = death
 
 function death:Start()
     self.dead = PetDead()
@@ -161,7 +198,7 @@ arrival:SetScript("OnEvent", OnArrival)
 local growth = {
     events = { "UNIT_PET_TRAINING_POINTS", "PET_UI_UPDATE", "UNIT_LEVEL", "UNIT_PET", "UNIT_SPELLCAST_SUCCEEDED" },
 }
-sources.HUNTSWORN_PET_GROWTH = growth
+sources[Addon.messages.petGrowth] = growth
 
 local function CheckGrowthLater()
     growth.pending = false
@@ -247,7 +284,7 @@ end
 -- next relog (its GUID is still the beast's), so petNumber is nil then.
 ---@type AddonSource
 local tame = { events = { "UNIT_SPELLCAST_SUCCEEDED", "UNIT_PET" } }
-sources.HUNTSWORN_PET_TAMED = tame
+sources[Addon.messages.petTamed] = tame
 
 function tame:Start()
     self.taming = false

@@ -73,7 +73,7 @@
   is entered or left. A toast when it does not fit, again at a pull at most
   every 5 minutes (a slider, 0 for every pull), and one key or the
   HuntswornAutocast macro that sets it right.
-- Feeding: a button beside the pet frame while the pet is not happy (and not eating), feeding
+- Feeding: a button beside the pet frame while the pet is alive and not happy (and not eating), feeding
   the food that keeps it happy cheapest (Well Fed food last), the order in
   its tooltip, a list to pick another food on a right-click; toasts when the
   pet becomes content or unhappy and when the last food it eats is gone.
@@ -197,7 +197,8 @@
 - Messages with a table of details, heard through Huntsworn:Listen:
   HUNTSWORN_TOAST, HUNTSWORN_PRINT, HUNTSWORN_RANKS_KNOWN, HUNTSWORN_ABILITY_LEARNED,
   HUNTSWORN_AUTOCAST_WANTED, HUNTSWORN_RARE_SEEN, HUNTSWORN_AMMO, and from the core
-  HUNTSWORN_PET_HAPPINESS, HUNTSWORN_PET_DIED, HUNTSWORN_PET_TAMED and
+  HUNTSWORN_PET_HAPPINESS, HUNTSWORN_PET_STATE (alive, dead or none),
+  HUNTSWORN_PET_DIED, HUNTSWORN_PET_TAMED and
   HUNTSWORN_PET_GROWTH (training points, level and loyalty, up or down), which
   it works out only while something listens. Huntsworn's own modules listen the
   same way. See docs/04-hooking.md, with an example addon, and

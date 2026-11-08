@@ -42,6 +42,7 @@ flowchart LR
     subgraph core[Huntsworn core]
         listen{{"Huntsworn:Listen<br/>starts a source while it has listeners"}}
         happy[happiness source]
+        state[pet state source]
         died[death source]
         tamed[tame source]
         growth[growth source]
@@ -63,11 +64,12 @@ flowchart LR
 
     other([Other addons])
 
-    game --> happy & died & tamed & growth
+    game --> happy & state & died & tamed & growth
     game --> al & ac & bm
-    listen -. starts .-> happy & died & tamed & growth
+    listen -. starts .-> happy & state & died & tamed & growth
 
     happy -- HUNTSWORN_PET_HAPPINESS --> fd & br & other
+    state -- HUNTSWORN_PET_STATE --> fd & other
     died -- HUNTSWORN_PET_DIED --> pj & other
     tamed -- HUNTSWORN_PET_TAMED --> pj & other
     growth -- HUNTSWORN_PET_GROWTH --> al & pj & br & other
@@ -248,6 +250,16 @@ The pet out's happiness changed. Feeding and the Data Broker listen.
 |---|---|---|
 | `happiness` | number | `Huntsworn.happiness.unhappy` (1), `.content` (2) or `.happy` (3) |
 | `before` | number? | `nil` for a pet just out |
+
+### `HUNTSWORN_PET_STATE` (core)
+
+The pet out became alive, dead or none, the same state `Huntsworn.PetState()` gives: every button
+about the pet follows it. Feeding hides its button for a dead pet.
+
+| Field | Type | |
+|---|---|---|
+| `state` | string | `"alive"`, `"dead"` (its body still out) or `"none"` (no pet out: dismissed, or a dead one's body gone) |
+| `before` | string | the state before |
 
 ### `HUNTSWORN_PET_DIED` (core)
 

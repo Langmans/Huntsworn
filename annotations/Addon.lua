@@ -280,6 +280,7 @@
 ---@field SPELLS_CHANGED fun(self: AddonFeeding)
 ---@field UNIT_AURA fun(self: AddonFeeding, event: string, unit: string)
 ---@field Eating fun(): boolean
+---@field OnPetState fun(self: AddonFeeding)
 ---@field button Button the feed button (HuntswornFeedButton)
 ---@field FEED_PET number
 ---@field FeedMacro fun(food: AddonFood): string
@@ -990,6 +991,7 @@
 ---@field huntEnded string
 ---@field petHappiness string
 ---@field petDied string
+---@field petState string
 ---@field petTamed string
 ---@field ammo string
 ---@field petAtPull string

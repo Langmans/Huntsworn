@@ -87,6 +87,11 @@
 ---@field happiness number Addon.happiness.unhappy (1), .content (2) or .happy (3)
 ---@field before number? nil for a pet just out
 
+---HUNTSWORN_PET_STATE (core, through Huntsworn:Listen): the pet out became alive, dead or none.
+---@class AddonPetStateEvent
+---@field state "alive"|"dead"|"none" dead: its body is still out; none: no pet out (dismissed, or a dead one's body gone)
+---@field before "alive"|"dead"|"none"
+
 ---HUNTSWORN_PET_DIED (core, through Huntsworn:Listen): the pet out died.
 ---@class AddonPetDiedEvent
 ---@field pet string?

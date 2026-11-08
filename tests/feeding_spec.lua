@@ -179,6 +179,18 @@ describe("Feeding", function()
             assert.is_false(button:IsShown(), "no pet")
         end)
 
+        it("hides while the pet is dead, and comes back once it is revived", function()
+            local client = NewClient():login()
+            local button = _G.HuntswornFeedButton
+            client:setHappiness(2)
+            client:petDies()
+            assert.is_false(button:IsShown(), "dead")
+            client:petBack()
+            assert.is_true(button:IsShown(), "revived, still content")
+            client:petDies():petGone():fire("UNIT_PET", "player")
+            assert.is_false(button:IsShown(), "the dead pet's body gone")
+        end)
+
         it("hides while the pet eats, and comes back after if it is still not happy", function()
             local client = NewClient():login()
             local button = _G.HuntswornFeedButton

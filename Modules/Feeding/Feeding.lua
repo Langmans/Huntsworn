@@ -286,6 +286,11 @@ function M:OnHappiness()
     self:CheckHappiness()
 end
 
+-- The core's HUNTSWORN_PET_STATE: the pet died, came back or went; no button for a dead pet.
+function M:OnPetState()
+    self:ApplyButton()
+end
+
 -- Not every client has every one; a missing one is skipped.
 local EVENTS = { "BAG_UPDATE_DELAYED", "UNIT_PET", "UNIT_LEVEL", "SPELLS_CHANGED", "UNIT_AURA" }
 
@@ -302,6 +307,7 @@ function M:OnEnable()
     if class ~= "HUNTER" then return end
     Addon.RegisterEvents(self, EVENTS)
     Addon:Listen(self, Addon.messages.petHappiness, "OnHappiness")
+    Addon:Listen(self, Addon.messages.petState, "OnPetState")
     self.happiness = nil
     self.canFeed = Addon.KnowsSpell(M.FEED_PET)
     wipe(foods)

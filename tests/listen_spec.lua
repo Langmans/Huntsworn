@@ -232,6 +232,25 @@ describe("HUNTSWORN_PET_DIED", function()
     end)
 end)
 
+describe("HUNTSWORN_PET_STATE", function()
+    it("says when the pet out dies, comes back or goes, with what it was before", function()
+        local client = bare()
+        assert.are.equal("alive", client.Addon.PetState())
+        local _, heard = listen(client, "HUNTSWORN_PET_STATE")
+        client:petDies()
+        assert.are.equal("dead", client.Addon.PetState())
+        client:fire("UNIT_HEALTH", "pet"):fire("UNIT_HEALTH", "target")
+        client:petBack()
+        client:petGone():fire("UNIT_PET", "player")
+        assert.are.same({
+            { state = "dead", before = "alive" },
+            { state = "alive", before = "dead" },
+            { state = "none", before = "alive" },
+        }, heard)
+        assert.are.equal("none", client.Addon.PetState())
+    end)
+end)
+
 describe("HUNTSWORN_PET_TAMED", function()
     it("names the pet a Tame Beast cast brought, and the beast it was", function()
         local client = NewClient({ noPet = true }):login()

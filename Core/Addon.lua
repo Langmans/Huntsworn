@@ -36,6 +36,7 @@ for _, key in ipairs({
     "huntEnded",
     "petHappiness",
     "petDied",
+    "petState",
     "petTamed",
     "ammo",
     "petAtPull",
