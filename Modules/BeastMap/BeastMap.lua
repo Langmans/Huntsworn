@@ -52,6 +52,7 @@ M.defaults = {
             diet = "all",
             zone = "all",
             you = "all",
+            sort = "level",
             reach = false,
             rares = false,
         },
@@ -563,6 +564,15 @@ local function NearestPin(npc)
     if not map then return nil, 0, 0, math.huge end
     local pin = (Data().beasts[npc].pins --[[@as table<number, number[]> ]])[map]
     return map, pin[1] / 100, pin[2] / 100, math.huge
+end
+
+---Yards in a straight line to a beast's nearest pin; huge when the player and the beast cannot be
+---placed on one continent, or it lives in an instance.
+---@param npc number
+---@return number
+function M.YardsTo(npc)
+    local _, _, _, yards = NearestPin(npc)
+    return yards
 end
 
 ---Seconds to a beast's nearest pin, as the player's route addon works it out (LibGoThere); a huge

@@ -236,6 +236,28 @@ describe("the Beasts tab", function()
         assert.are.equal("Family: Cat", panel.pickers.family.label.text)
     end)
 
+    it("sorts by straight-line distance with a click on Distance's head, and back by Level's", function()
+        local client = hunter(10)
+        local panel = tab(client)
+        assert.are.equal("Level", panel.sorts.level.label.text)
+        click(panel.sorts.distance)
+        -- The player stands in the middle of Elwynn Forest; Tirisfal Glades cannot be placed in
+        -- the simulated world, and Cave Boar lives in an instance: those last, by level.
+        assert.are.same(
+            { "Low Cat", "High Cat", "Field Boar", "Spider", "Rare Cat (rare)", "Cave Boar" },
+            column(panel)
+        )
+        local yards = column(panel, "distance")
+        assert.is_truthy(yards[1]:match("^%d+ yd$"), yards[1])
+        assert.are.same({ "", "" }, { yards[5], yards[6] }, "no distance for those")
+        assert.are.same({ 1, 1, 1 }, panel.sorts.distance.label.textColor, "the sort in white")
+        assert.are.same({ 1, 0.82, 0 }, panel.sorts.level.label.textColor, "the other in gold")
+        assert.are.equal("distance", client.Addon:GetModule("BeastMap"):Settings().beasts.sort)
+        click(panel.sorts.level)
+        assert.are.equal("Low Cat", column(panel)[1])
+        assert.are.equal("Spider", column(panel)[2])
+    end)
+
     it("closes a pick list with a second click on its picker", function()
         local client = hunter(10)
         local panel = tab(client)

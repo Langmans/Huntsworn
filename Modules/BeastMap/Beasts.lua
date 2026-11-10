@@ -1,10 +1,12 @@
 local _, ns = ...
 
 -- The Beasts tab of Huntsworn's window (Core\Window.lua): every beast that teaches a pet ability
--- rank, like Wowhead's hunter pets tool but measured against this hunter. By level, then name, each
--- with its family, levels, the ranks it teaches coloured by how the hunter stands to each (new
--- green, skipped yellow, known grey, as on the beast's tooltip), its attack speed when not 2.0, and
--- a button that shows the way there. Filters on top, kept in the profile: a name search, ability,
+-- rank, like Wowhead's hunter pets tool but measured against this hunter. By level, then name, or
+-- with a click on the Distance head nearest first in a straight line (those it cannot place last,
+-- by level). Each with its family, levels, the ranks it teaches coloured by how the hunter stands
+-- to each (new green, skipped yellow, known grey, as on the beast's tooltip), the yards to it, its
+-- attack speed when not 2.0, and a button that shows the way there. The sort and the filters are
+-- kept in the profile. Filters on top: a name search, ability,
 -- family, diet, zone (all, the player's own, one), whether the hunter has every rank already or not
 -- yet, in reach (at most the hunter's level), rares only. A click on a row opens the beast's card
 -- (BeastCard.lua) in the list's place.
@@ -16,10 +18,12 @@ local M = Addon:GetModule("BeastMap") --[[@as AddonBeastMap]]
 
 local LINE_HEIGHT, ROW_HEIGHT, LIST_TOP, ROWS = 24, 18, 68, 18
 local ICON_X, NAME_X, FAMILY_X, LEVEL_X, TEACHES_X = 2, 22, 178, 272, 322
-local SPEED_WIDTH, SEARCH_WIDTH = 34, 140
+local SPEED_WIDTH, DISTANCE_WIDTH, SEARCH_WIDTH = 34, 56, 140
 local GO_ICON = "Interface\\Icons\\INV_Misc_Map_01"
 local CHECK_BOX, CHECK_MARK = "Interface\\Buttons\\UI-CheckBox-Up", "Interface\\Buttons\\UI-CheckBox-Check"
-local GOLD, DIM = { 1, 0.82, 0 }, { 0.6, 0.6, 0.6 }
+local GOLD, DIM, WHITE = { 1, 0.82, 0 }, { 0.6, 0.6, 0.6 }, { 1, 1, 1 }
+-- The list's orders, chosen by a click on a column head.
+local SORTS = { level = "level", distance = "distance" }
 local QUESTION_MARK = 134400
 -- A rank's colour code in the Teaches column, by how the hunter stands to it (M.Lacking).
 local STANDING = { above = "ff00ff00", gap = "ffffff00", known = "ff808080" }
@@ -41,6 +45,9 @@ local abilities, families, diets, zones
 -- each look. The ranks named in a row's Teaches column, refilled for each row.
 ---@type number[], table<number, string>, string[]
 local shown, names, parts = {}, {}, {}
+-- The yards to each beast shown, worked out once per look (BeastMap.lua's YardsTo).
+---@type table<number, number>
+local yards = {}
 
 ---A zone choice's name: a map's, or an instance's area.
 ---@param zone number
@@ -198,19 +205,33 @@ local function ByLevel(a, b)
     return a < b
 end
 
----The beasts that pass the filters, in list order.
+---Two beasts nearest first in a straight line; those it cannot place (the same huge distance) by
+---level.
+---@param a number
+---@param b number
+---@return boolean
+local function ByDistance(a, b)
+    if yards[a] ~= yards[b] then return yards[a] < yards[b] end
+    return ByLevel(a, b)
+end
+
+---The beasts that pass the filters, in the order chosen, with the yards to each in `yards`.
 ---@param filter AddonBeastsFilter
 ---@return number[]
 local function Matching(filter)
     wipe(shown)
+    wipe(yards)
     local search, here = filter.search:lower(), C_Map.GetBestMapForUnit("player")
     for npc, beast in
         pairs(Addon.data.beasts --[[@as table<number, AddonBeast>]])
     do
         names[npc] = M.BeastName(npc)
-        if Passes(npc, beast, filter, search, here) then shown[#shown + 1] = npc end
+        if Passes(npc, beast, filter, search, here) then
+            shown[#shown + 1] = npc
+            yards[npc] = M.YardsTo(npc)
+        end
     end
-    table.sort(shown, ByLevel)
+    table.sort(shown, filter.sort == SORTS.distance and ByDistance or ByLevel)
     return shown
 end
 
@@ -354,9 +375,12 @@ local function Row(panel, skin, index)
     row.speed = Text(row, skin, "RIGHT")
     row.speed:SetWidth(SPEED_WIDTH)
     row.speed:SetPoint("RIGHT", row.go, "LEFT", -6, 0)
+    row.distance = Text(row, skin, "RIGHT")
+    row.distance:SetWidth(DISTANCE_WIDTH)
+    row.distance:SetPoint("RIGHT", row.speed, "LEFT", -4, 0)
     row.teaches = Text(row, skin)
     row.teaches:SetPoint("LEFT", TEACHES_X, 0)
-    row.teaches:SetPoint("RIGHT", row.speed, "LEFT", -4, 0)
+    row.teaches:SetPoint("RIGHT", row.distance, "LEFT", -4, 0)
     row:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight", "ADD")
     row:SetScript("OnClick", function()
         panel.chosen = row.npc
@@ -365,15 +389,18 @@ local function Row(panel, skin, index)
     return row
 end
 
----The column heads above the rows, in gold.
+---The column heads above the rows, in gold; Level and Distance sort the list, the one it is
+---sorted by in white.
 ---@param panel AddonBeastsPanel
 ---@param skin AddonButtonHolderSkin
 local function Heads(panel, skin)
-    ---@param x number
+    ---@param x number from the list's left, or with `right` its right
     ---@param label string
     ---@param right boolean?
-    local function Head(x, label, right)
-        local text = Text(panel.browse, skin, right and "RIGHT" or nil)
+    ---@param parent Frame?
+    ---@return FontString
+    local function Head(x, label, right, parent)
+        local text = Text(parent or panel.browse, skin, right and "RIGHT" or nil)
         if right then
             text:SetPoint("TOPRIGHT", panel.list, "TOPRIGHT", x, ROW_HEIGHT)
         else
@@ -381,12 +408,33 @@ local function Heads(panel, skin)
         end
         text:SetText(label)
         text:SetTextColor(GOLD[1], GOLD[2], GOLD[3])
+        return text
     end
+    ---@param x number
+    ---@param label string
+    ---@param value string
+    ---@param right boolean?
+    ---@return AddonTextButton
+    local function SortHead(x, label, value, right)
+        local head = CreateFrame("Button", nil, panel.browse) --[[@as AddonTextButton]]
+        head.label, head.value = Head(x, label, right, head), value
+        head:SetAllPoints(head.label)
+        -- A click sorts the list by this head, kept in the profile.
+        head:SetScript("OnClick", function()
+            Filter().sort = value --[[@as "level"|"distance"]]
+            Changed(panel)
+        end)
+        return head
+    end
+    local speedRight = -ROW_HEIGHT - 8
     Head(NAME_X, L.BEASTS_COLUMN_BEAST)
     Head(FAMILY_X, L.BEASTS_COLUMN_FAMILY)
-    Head(LEVEL_X, L.BEASTS_COLUMN_LEVEL)
     Head(TEACHES_X, L.BEASTS_COLUMN_TEACHES)
-    Head(-ROW_HEIGHT - 8, L.BEASTS_COLUMN_SPEED, true)
+    Head(speedRight, L.BEASTS_COLUMN_SPEED, true)
+    panel.sorts = {
+        level = SortHead(LEVEL_X, L.BEASTS_COLUMN_LEVEL, SORTS.level),
+        distance = SortHead(speedRight - SPEED_WIDTH - 4, L.BEASTS_COLUMN_DISTANCE, SORTS.distance, true),
+    }
 end
 
 ---Builds the panel: in `browse` two lines of filters, the count, the column heads, the rows and
@@ -471,6 +519,8 @@ local function FillRow(row, npc)
     row.icon:SetTexture(icon or QUESTION_MARK)
     local speed = M.AttackSpeed(npc)
     row.speed:SetText(speed and ("%.1f"):format(speed) or "")
+    local distance = yards[npc]
+    row.distance:SetText(distance ~= math.huge and L.BEASTS_YARDS:format(math.floor(distance + 0.5)) or "")
     row.go:SetShown(beast.pins ~= nil)
     row:Show()
 end
@@ -528,6 +578,10 @@ local function FillFilters(panel, filter)
     filter.zone = Addon.FillPicker(zone, filter.zone)
     panel.reach.check:SetShown(filter.reach)
     panel.rares.check:SetShown(filter.rares)
+    for value, head in pairs(panel.sorts) do
+        local colour = value == filter.sort and WHITE or GOLD
+        head.label:SetTextColor(colour[1], colour[2], colour[3])
+    end
     if panel.search:GetText() ~= filter.search then panel.search:SetText(filter.search) end
     panel.hint:SetShown(filter.search == "")
 end

@@ -222,6 +222,10 @@ L.BEASTS_COLUMN_FAMILY = "Family"
 L.BEASTS_COLUMN_LEVEL = "Level"
 L.BEASTS_COLUMN_TEACHES = "Teaches"
 L.BEASTS_COLUMN_SPEED = "Speed"
+-- The column of how far each beast is in a straight line; a click on it, or on Level, sorts the list by it.
+L.BEASTS_COLUMN_DISTANCE = "Distance"
+-- A beast's distance in that column. %d: yards.
+L.BEASTS_YARDS = "%d yd"
 -- A rare beast's name in the list. %s: the name.
 L.BEASTS_RARE_NAME = "%s (rare)"
 -- The tooltip of a row's map button. %s: the beast's name.

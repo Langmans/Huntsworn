@@ -567,6 +567,7 @@
 ---@field GoToBeast fun(self: AddonBeastMap, npc: number, pinMap: number?, pinX: number?, pinY: number?): boolean
 ---@field PinSpell fun(npc: number): number? the rank a beast's pin shows
 ---@field AttackSpeed fun(npc: number): number? a tameable beast's attack speed where it is not 2.0 (Tooltip.lua)
+---@field YardsTo fun(npc: number): number yards in a straight line to its nearest pin, huge where it cannot be placed
 ---@field StandingText fun(spellID: number): string a rank's text in the colour of the hunter's standing (Beasts.lua)
 ---@field CreateBeastCard fun(panel: AddonBeastsPanel, skin: AddonButtonHolderSkin): AddonBeastCard
 ---@field FillBeastCard fun(card: AddonBeastCard, npc: number)
@@ -623,6 +624,7 @@
 ---@field diet string "all", or a Huntsworn.diets value the beast's family eats
 ---@field zone string|number "all", "here" (the player's map), a uiMapID, or minus an instance's AreaTable ID
 ---@field you "all"|"has"|"lacks" every rank the beast teaches known already, or some not yet
+---@field sort "level"|"distance" the list's order: by level, or nearest first in a straight line
 ---@field reach boolean only beasts at or below the hunter's level
 ---@field rares boolean only rare beasts
 
@@ -988,6 +990,7 @@
 ---@field list Frame holds the rows; takes the mouse wheel
 ---@field bar AddonScrollBar
 ---@field rows AddonBeastRow[]
+---@field sorts {level: AddonTextButton, distance: AddonTextButton} the column heads that sort the list
 ---@field browse Frame holds the filters, count and list; hidden while a card shows
 ---@field card AddonBeastCard
 ---@field chosen number? the beast whose card shows
@@ -1028,6 +1031,7 @@
 ---@field level FontString
 ---@field teaches FontString its ranks, coloured by standing
 ---@field speed FontString its attack speed when not 2.0
+---@field distance FontString yards in a straight line, "" where it cannot be placed
 ---@field go Button shows the way there
 ---@field npc number?
 
