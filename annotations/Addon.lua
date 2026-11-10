@@ -566,6 +566,7 @@
 ---@field TravelTimeTo fun(npc: number): number? seconds, when a route addon gives travel times
 ---@field GoToBeast fun(self: AddonBeastMap, npc: number, pinMap: number?, pinX: number?, pinY: number?): boolean
 ---@field PinSpell fun(npc: number): number? the rank a beast's pin shows
+---@field AttackSpeed fun(npc: number): number? a tameable beast's attack speed where it is not 2.0 (Tooltip.lua)
 ---@field Hunt fun(self: AddonBeastMap): AddonHunt? the hunt on (Hunt.lua)
 ---@field IsHunting fun(self: AddonBeastMap, npc: number?, spellID: number?): boolean
 ---@field StartHunt fun(self: AddonBeastMap, npc: number, spellID: number, map: number?, x: number?, y: number?)
@@ -609,6 +610,18 @@
 ---@field familyGroup "family"|"role" how the Families tab groups its list
 ---@field familyRares boolean a Rares item in each group of that list
 ---@field familySpecNames boolean the classic clients' groups by role named Ferocity, Tenacity, Cunning
+---@field beasts AddonBeastsFilter the Beasts tab's filters
+
+---The Beasts tab's filters (Modules\BeastMap\Beasts.lua); "all" for no filter.
+---@class AddonBeastsFilter
+---@field search string part of a beast's name, "" for any
+---@field ability string|number "all", or an ability (its rank 1's spell ID)
+---@field family string|number "all", or a CreatureFamily ID
+---@field diet string "all", or a Huntsworn.diets value the beast's family eats
+---@field zone string|number "all", "here" (the player's map), a uiMapID, or minus an instance's AreaTable ID
+---@field you "all"|"has"|"lacks" every rank the beast teaches known already, or some not yet
+---@field reach boolean only beasts at or below the hunter's level
+---@field rares boolean only rare beasts
 
 ---A map's pins as npc, coord pairs, with the position of each coord's npc.
 ---@class AddonBeastMapPins
@@ -961,6 +974,59 @@
 ---@field learnable Texture the quest giver's "!" while a rank can be learned now
 ---@field ability number? the spell ID of its rank 1
 
+---The Beasts tab's panel (Modules\BeastMap\Beasts.lua).
+---@class AddonBeastsPanel: Frame
+---@field search EditBox the name search
+---@field hint FontString the search box's grey word while empty
+---@field pickers {ability: AddonPicker, family: AddonPicker, diet: AddonPicker, zone: AddonPicker, you: AddonPicker}
+---@field reach AddonCheckText the In reach switch
+---@field rares AddonCheckText the Rares switch
+---@field count FontString how many beasts match
+---@field list Frame holds the rows; takes the mouse wheel
+---@field bar AddonScrollBar
+---@field rows AddonBeastRow[]
+
+---@class AddonBeastRow: Button
+---@field stripe Texture every other row
+---@field icon Texture the first rank it teaches that the hunter lacks, else its first
+---@field name FontString
+---@field family FontString
+---@field level FontString
+---@field teaches FontString its ranks, coloured by standing
+---@field speed FontString its attack speed when not 2.0
+---@field go Button shows the way there
+---@field npc number?
+
+---A scrollbar beside a list of rows (Core\Widgets.lua).
+---@class AddonScrollBar: Slider
+---@field track Texture
+---@field offset number rows scrolled past
+---@field last number the highest offset
+---@field OnScroll fun(offset: number)
+---@field SetRange fun(self: AddonScrollBar, total: number, visible: number)
+
+---A dropdown of the window's tabs (Core\Widgets.lua).
+---@class AddonPicker: Button
+---@field back Texture
+---@field arrow Texture
+---@field label FontString "<title>: <choice>"
+---@field title string
+---@field values (string|number)[] the choices, in order
+---@field texts string[] each choice's text
+---@field value (string|number)? the choice shown
+---@field OnPick fun(value: string|number)
+
+---The list a picker opens, one for every picker.
+---@class AddonPickList: Frame
+---@field inner Frame holds the rows; takes the mouse wheel
+---@field rows AddonPickRow[]
+---@field bar AddonScrollBar
+---@field picker AddonPicker? the picker it is open for
+
+---@class AddonPickRow: Button
+---@field label FontString
+---@field value (string|number)?
+
 ---@class AddonFamilyBeastRow: Frame
 ---@field text FontString
 ---@field go Button
@@ -1029,5 +1095,11 @@
 ---@field familyMods table<number, AddonFamilyMods> by CreatureFamily ID, the classic clients'
 ---@field FamilyModsText fun(familyID: number?): string?
 ---@field DietText fun(familyID: number?): string?
+---@field FoodName fun(food: string): string a Huntsworn.diets value's name
+---@field ScrollBar fun(list: Frame, OnScroll: fun(offset: number)): AddonScrollBar (Core\Widgets.lua)
+---@field Picker fun(parent: Frame, skin: AddonButtonHolderSkin, width: number, title: string, OnPick: fun(value: string|number)): AddonPicker
+---@field FillPicker fun(picker: AddonPicker, value: string|number): string|number shows a choice, the first when `value` is none
+---@field FillPickList fun()
+---@field pickList AddonPickList? made the first time a picker opens
 ---@field FamilyLine fun(familyID: number?): string the category and modifiers before Wrath, else the specialization
 ---@field LoyaltyFromText fun(text: string): number?, string? a loyalty text's level and name, in each client's wording

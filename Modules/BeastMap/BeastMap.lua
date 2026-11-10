@@ -45,6 +45,16 @@ M.defaults = {
         familyGroup = "family",
         familyRares = false,
         familySpecNames = false,
+        beasts = {
+            search = "",
+            ability = "all",
+            family = "all",
+            diet = "all",
+            zone = "all",
+            you = "all",
+            reach = false,
+            rares = false,
+        },
     },
 }
 
@@ -478,6 +488,7 @@ function M:Refresh()
     wipe(pinSpell)
     self:UpdateMapButton()
     Addon:RefreshWindow("abilities")
+    Addon:RefreshWindow("beasts")
     if not HandyNotes then return end
     HandyNotes:UpdateWorldMapPlugin(PLUGIN)
     HandyNotes:UpdateMinimapPlugin(PLUGIN)

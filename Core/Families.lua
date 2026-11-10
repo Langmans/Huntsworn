@@ -44,6 +44,13 @@ local FOOD_NAMES = {
     rawFish = L.FAMILY_FOOD_RAWFISH,
 }
 
+---A food type's name, by its Huntsworn.diets value.
+---@param food string
+---@return string
+function Addon.FoodName(food)
+    return FOOD_NAMES[food] --[[@as string]]
+end
+
 ---What a family eats: "Eats: Meat, Fish"; nil for a family Huntsworn knows no diet of.
 ---@param familyID number?
 ---@return string?

@@ -189,4 +189,42 @@ L.BEASTMAP_RARES_OF = "%s: rares"
 -- A rank's tooltip, a line per beast that teaches it. First %s: the beast and its place; second: its level (BEASTMAP_LEVEL).
 L.BEASTMAP_TEACHER_LINE = "%s: %s"
 
+-- Huntsworn's window, the Beasts tab: its name; every beast that teaches a pet ability rank.
+L.BEASTS_TAB = "Beasts"
+-- The filters on top. Each dropdown shows "<what>: <choice>" (WINDOW_PICKED); the first choice of each is everything.
+L.BEASTS_ABILITY = "Ability"
+L.BEASTS_ABILITY_ALL = "All abilities"
+L.BEASTS_FAMILY = "Family"
+L.BEASTS_FAMILY_ALL = "All families"
+-- What the beast's family eats (Meat, Fish, ...).
+L.BEASTS_DIET = "Diet"
+L.BEASTS_DIET_ALL = "All diets"
+L.BEASTS_ZONE = "Zone"
+L.BEASTS_ZONE_ALL = "All zones"
+-- The zone the player is in. %s: its name.
+L.BEASTS_ZONE_HERE = "Here (%s)"
+-- How the hunter stands to what a beast teaches: every rank known already, or some rank not yet.
+L.BEASTS_YOU = "You"
+L.BEASTS_YOU_ALL = "All"
+L.BEASTS_YOU_HAS = "Has already"
+L.BEASTS_YOU_LACKS = "Not yet"
+-- Switches: only beasts at or below the hunter's level; only rare beasts.
+L.BEASTS_REACH = "In reach"
+L.BEASTS_RARES = "Rares"
+-- The grey text in the empty search box (it searches the beasts' names).
+L.BEASTS_SEARCH = "Search"
+-- The count above the list (%d: how many beasts match), and the line when none does.
+L.BEASTS_COUNT = "%d beasts"
+L.BEASTS_NONE = "No beast matches."
+-- The column heads.
+L.BEASTS_COLUMN_BEAST = "Beast"
+L.BEASTS_COLUMN_FAMILY = "Family"
+L.BEASTS_COLUMN_LEVEL = "Level"
+L.BEASTS_COLUMN_TEACHES = "Teaches"
+L.BEASTS_COLUMN_SPEED = "Speed"
+-- A rare beast's name in the list. %s: the name.
+L.BEASTS_RARE_NAME = "%s (rare)"
+-- The tooltip of a row's map button. %s: the beast's name.
+L.BEASTS_GO = "The way to %s"
+
 -- stylua: ignore end

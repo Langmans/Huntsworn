@@ -11,4 +11,5 @@
     <Script file="Options.lua"/>
     <Script file="Abilities.lua"/>
     <Script file="Families.lua"/>
+    <Script file="Beasts.lua"/>
 </Ui>

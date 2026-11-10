@@ -60,6 +60,8 @@ L.FAMILY_FOOD_RAWFISH = "Raw Fish"
 -- Huntsworn's window: its title, and the name of its key binding (Esc > Options > Keybindings > AddOns).
 L.WINDOW_TITLE = "Huntsworn"
 L.WINDOW_BINDING = "Huntsworn: open or close the window"
+-- A dropdown in the window's tabs, as it shows its choice. First %s: what it picks ("Family"), second: the choice ("Cat").
+L.WINDOW_PICKED = "%s: %s"
 -- Chat, /huntsworn help: one line per command. First %s: the module's command word, second %s:
 -- the command (both typed as they are, not translated), third %s: what the command does.
 L.HELP_COMMAND = "/huntsworn %s %s - %s"

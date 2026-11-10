@@ -1278,6 +1278,13 @@ function NewClient(opts)
     function Region:SetTexCoord(left, right, top, bottom)
         self.texCoord = { left, right, top, bottom }
     end
+    -- A slider's value, as set; setting it fires no OnValueChanged here.
+    function Region:SetValue(value)
+        self.value = value
+    end
+    function Region:GetValue()
+        return self.value or 0
+    end
     function Region:SetWordWrap(wrap)
         self.wordWrap = wrap
     end

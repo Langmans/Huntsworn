@@ -30,7 +30,7 @@ those two clients from the CMaNGOS databases).
 ## Use
 
 - `/huntsworn` opens or closes Huntsworn's window: Pets and Stable (the Pet
-  Journal), Abilities and Families (Beast Map). Also from the data broker,
+  Journal), Abilities, Beasts and Families (Beast Map). Also from the data broker,
   its minimap button, or a key binding (Esc > Options > Keybindings > AddOns
   > Huntsworn). It takes the look of your button skin (Huntsworn's own, ElvUI or
   EllesmereUI); drag it to move it.
@@ -290,7 +290,12 @@ Forever, Move Fast, TomTom, the game's own map pin, or a map pin link in chat).
   five nearest by travel time with a route addon), a button that starts the
   hunt for it, and every teacher in its tooltip; a click on the rank unfolds
   it to every beast that teaches it, each with its own hunt button (scroll
-  with the mouse wheel). The Families tab shows
+  with the mouse wheel). The Beasts tab lists every beast that teaches a
+  rank, by level, with its family, levels, the ranks it teaches (green new,
+  yellow skipped, grey known), its attack speed when not 2.0 and a button
+  that shows the way there; filter by name, ability, family, diet, zone (or
+  the one you are in), what you have already or not yet, in reach and rares.
+  The filters stay as you left them. The Families tab shows
   per family its specialization, diet, what it can learn and where to tame
   one. Its list goes by family or by role (on Classic the damage families
   first by their damage bonus, the tanks by armor and health), with a Rares

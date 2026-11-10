@@ -58,6 +58,8 @@ local function AttackSpeed(npc)
     local speed = speeds and speeds[npc] or beast and beast.speed
     if speed and speed ~= 2 then return speed end
 end
+-- For the Beasts tab (Beasts.lua).
+M.AttackSpeed = AttackSpeed
 
 ---Adds a beast's attack speed and the ranks it teaches to the game's tooltip of it.
 ---@param tooltip GameTooltip

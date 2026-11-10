@@ -20,7 +20,8 @@
   Era, Burning Crusade and WoW: Forever; Burning Crusade gets Beast Map and
   its families (Dragonhawk, Ravager, Warp Stalker, Sporebat, Nether Ray,
   Serpent). Each client loads only its own beast data. On WoW: Forever each
-  beast teaches what Wowhead's hunter pets tool says it knows when tamed, and
+  beast teaches what Wowhead's hunter pets tool says it knows when tamed, every
+  teaching beast has its map pins (or its instance), and
   Forever's new beasts (Zephras Isle and others) are in.
 - What a pet eats on Classic Era and Burning Crusade comes from LibTameable
   too, each family's diet from the client's own tables.
@@ -170,6 +171,13 @@
   tooltip, the Families tab and the rare alarm: a tamed beast keeps it there.
   On Classic Era also in the tooltip of any tameable beast ("Attack speed
   1.7"), teaching or not, by Petopia's list of tamed pets' speeds.
+- Beasts tab (Beast Map): every beast that teaches a pet ability rank, by
+  level, like Wowhead's hunter pets tool but measured against your hunter.
+  Each row has the beast's family, levels, the ranks it teaches (green new,
+  yellow skipped, grey known), its attack speed when not 2.0 and a button
+  that shows the way there. Filters, kept in the profile: a name search,
+  ability, family, diet, zone (all, the one you are in, or one), "You: has
+  already / not yet", in reach and rares. A scrollbar beside the rows.
 - Families tab: the list by family or by role (Offense, Defense, General on
   Classic, the strongest first; or named Ferocity, Tenacity, Cunning with a
   switch on the Beast Map page), scrolled with the mouse wheel, and with

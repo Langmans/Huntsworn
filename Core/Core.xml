@@ -16,6 +16,7 @@
     <Include file="Toast\Toast.xml"/>
     <Script file="Buttons.lua"/>
     <Script file="Window.lua"/>
+    <Script file="Widgets.lua"/>
     <Script file="Macro.lua"/>
     <Script file="Options.lua"/>
     <Script file="Commands.lua"/>
