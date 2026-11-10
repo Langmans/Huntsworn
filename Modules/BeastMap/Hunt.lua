@@ -49,6 +49,7 @@ function M:StartHunt(npc, spellID, map, x, y)
     self:ShowHunt()
     self:ApplyTameButton()
     Addon:RefreshWindow("abilities")
+    Addon:RefreshWindow("beasts")
 end
 
 ---Ends the hunt on: "learned" when the hunter knows the rank now, "tamed" when a pet that teaches
@@ -77,6 +78,7 @@ function M:StopHunt(reason, pet)
     self:ShowHunt()
     self:ApplyTameButton()
     Addon:RefreshWindow("abilities")
+    Addon:RefreshWindow("beasts")
 end
 
 ---HUNTSWORN_RANKS_KNOWN: the pins again, and the hunt over once its rank is known.

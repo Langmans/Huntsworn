@@ -295,7 +295,9 @@ Forever, Move Fast, TomTom, the game's own map pin, or a map pin link in chat).
   yellow skipped, grey known), its attack speed when not 2.0 and a button
   that shows the way there; filter by name, ability, family, diet, zone (or
   the one you are in), what you have already or not yet, in reach and rares.
-  The filters stay as you left them. The Families tab shows
+  The filters stay as you left them. Click a beast for its card: its model,
+  what it teaches, and the map of its zone with a dot where it spawns (click
+  a dot to go there), plus a Hunt button. The Families tab shows
   per family its specialization, diet, what it can learn and where to tame
   one. Its list goes by family or by role (on Classic the damage families
   first by their damage bonus, the tanks by armor and health), with a Rares

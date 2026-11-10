@@ -6,7 +6,8 @@ local _, ns = ...
 -- green, skipped yellow, known grey, as on the beast's tooltip), its attack speed when not 2.0, and
 -- a button that shows the way there. Filters on top, kept in the profile: a name search, ability,
 -- family, diet, zone (all, the player's own, one), whether the hunter has every rank already or not
--- yet, in reach (at most the hunter's level), rares only.
+-- yet, in reach (at most the hunter's level), rares only. A click on a row opens the beast's card
+-- (BeastCard.lua) in the list's place.
 
 ---@type Addon
 local Addon = ns
@@ -240,7 +241,7 @@ end
 ---@param key "reach"|"rares"
 ---@return AddonCheckText
 local function Switch(panel, skin, label, key)
-    local button = CreateFrame("Button", nil, panel) --[[@as AddonCheckText]]
+    local button = CreateFrame("Button", nil, panel.browse) --[[@as AddonCheckText]]
     button.label = Text(button, skin)
     button.label:SetPoint("LEFT", ROW_HEIGHT + 2, 0)
     button.label:SetText(label)
@@ -268,7 +269,7 @@ end
 ---@param key "ability"|"family"|"diet"|"zone"|"you"
 ---@return AddonPicker
 local function FilterPicker(panel, skin, width, title, key)
-    return Addon.Picker(panel, skin, width, title, function(value)
+    return Addon.Picker(panel.browse, skin, width, title, function(value)
         Filter()[key] = value
         Changed(panel)
     end)
@@ -279,7 +280,7 @@ end
 ---@param skin AddonButtonHolderSkin
 ---@return EditBox
 local function SearchBox(panel, skin)
-    local box = CreateFrame("EditBox", nil, panel, "InputBoxTemplate")
+    local box = CreateFrame("EditBox", nil, panel.browse, "InputBoxTemplate")
     box:SetSize(SEARCH_WIDTH, 20)
     box:SetAutoFocus(false)
     box:SetPoint("TOPLEFT", 6, 0)
@@ -357,6 +358,10 @@ local function Row(panel, skin, index)
     row.teaches:SetPoint("LEFT", TEACHES_X, 0)
     row.teaches:SetPoint("RIGHT", row.speed, "LEFT", -4, 0)
     row:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight", "ADD")
+    row:SetScript("OnClick", function()
+        panel.chosen = row.npc
+        Addon:RefreshWindow("beasts")
+    end)
     return row
 end
 
@@ -368,7 +373,7 @@ local function Heads(panel, skin)
     ---@param label string
     ---@param right boolean?
     local function Head(x, label, right)
-        local text = Text(panel, skin, right and "RIGHT" or nil)
+        local text = Text(panel.browse, skin, right and "RIGHT" or nil)
         if right then
             text:SetPoint("TOPRIGHT", panel.list, "TOPRIGHT", x, ROW_HEIGHT)
         else
@@ -384,10 +389,14 @@ local function Heads(panel, skin)
     Head(-ROW_HEIGHT - 8, L.BEASTS_COLUMN_SPEED, true)
 end
 
----Builds the panel: two lines of filters, the count, the column heads, the rows and their bar.
+---Builds the panel: in `browse` two lines of filters, the count, the column heads, the rows and
+---their bar; beside it the beast's card, which takes its place.
 ---@param panel AddonBeastsPanel
 ---@param skin AddonButtonHolderSkin
 local function Create(panel, skin)
+    panel.browse = CreateFrame("Frame", nil, panel)
+    panel.browse:SetAllPoints()
+    panel.card = M.CreateBeastCard(panel, skin)
     panel.search = SearchBox(panel, skin)
     panel.pickers = {
         ability = FilterPicker(panel, skin, 170, L.BEASTS_ABILITY, "ability"),
@@ -406,10 +415,10 @@ local function Create(panel, skin)
     panel.reach:SetPoint("LEFT", pickers.you, "RIGHT", 10, 0)
     panel.rares = Switch(panel, skin, L.BEASTS_RARES, "rares")
     panel.rares:SetPoint("LEFT", panel.reach, "RIGHT", 8, 0)
-    panel.count = Text(panel, skin, "RIGHT")
+    panel.count = Text(panel.browse, skin, "RIGHT")
     panel.count:SetPoint("TOPRIGHT", 0, -LINE_HEIGHT - 4)
     panel.count:SetTextColor(DIM[1], DIM[2], DIM[3])
-    panel.list = CreateFrame("Frame", nil, panel)
+    panel.list = CreateFrame("Frame", nil, panel.browse)
     panel.list:SetPoint("TOPLEFT", 0, -LIST_TOP)
     panel.list:SetPoint("BOTTOMRIGHT", -16, 0)
     panel.bar = Addon.ScrollBar(panel.list, function()
@@ -428,6 +437,8 @@ end
 local function Coloured(spellID)
     return ("|c%s%s|r"):format(STANDING[M.Lacking(spellID) or "known"], M.RankText(spellID) or "?")
 end
+-- For the beast's card (BeastCard.lua).
+M.StandingText = Coloured
 
 ---"5" or "5-6".
 ---@param beast AddonBeast
@@ -521,9 +532,16 @@ local function FillFilters(panel, filter)
     panel.hint:SetShown(filter.search == "")
 end
 
----Fills the filters, the count and the rows.
+---Fills the chosen beast's card, or else the filters, the count and the rows.
 ---@param panel AddonBeastsPanel
 local function Refresh(panel)
+    local chosen = panel.chosen and Addon.data.beasts[panel.chosen] and panel.chosen
+    panel.browse:SetShown(not chosen)
+    panel.card:SetShown(chosen ~= nil)
+    if chosen then
+        M.FillBeastCard(panel.card, chosen)
+        return
+    end
     local filter = Filter()
     FillFilters(panel, filter)
     local list = Matching(filter)

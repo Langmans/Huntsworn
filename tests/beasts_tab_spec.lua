@@ -262,6 +262,136 @@ describe("the Beasts tab", function()
         assert.is_true(client.Addon.pickList.shown, "another picker hiding leaves it open")
     end)
 
+    describe("a beast's card", function()
+        ---Opens the card of the beast named `name` in the list.
+        local function open(panel, name)
+            for _, row in ipairs(panel.rows) do
+                if row.shown and row.name.text == name then
+                    click(row)
+                    return panel.card
+                end
+            end
+            error("no row " .. name)
+        end
+
+        ---The shown dots on the card's map, as "x,y" in percent.
+        local function dots(card)
+            local out = {}
+            for _, dot in ipairs(card.dots) do
+                if dot.shown then out[#out + 1] = dot.x .. "," .. dot.y end
+            end
+            return out
+        end
+
+        ---The shown map buttons' texts.
+        local function maps(card)
+            local out = {}
+            for _, button in ipairs(card.maps) do
+                if button.shown then out[#out + 1] = button.label.text end
+            end
+            return out
+        end
+
+        it("opens with a click on its row, and Back returns to the list as it was", function()
+            local client = hunter(10)
+            local panel = tab(client)
+            pick(client, panel.pickers.family, "Cat")
+            local card = open(panel, "Low Cat")
+            assert.is_true(card.shown)
+            assert.is_false(panel.browse.shown)
+            assert.are.equal("Low Cat", card.title.text)
+            assert.are.equal("Level 5-6", card.level.text)
+            assert.are.equal("Cat. Eats: Meat, Fish", card.family.text)
+            assert.are.equal("|cff00ff00Claw (Rank 1)|r\n|cff00ff00Claw (Rank 2)|r", card.teaches.text)
+            assert.are.same({ creature = 101 }, card.model.shownModel)
+            click(card.back)
+            assert.is_false(card.shown)
+            assert.is_true(panel.browse.shown)
+            assert.are.same({ "Low Cat", "Rare Cat (rare)", "High Cat" }, column(panel))
+            pick(client, panel.pickers.family, "Boar")
+            card = open(panel, "Field Boar")
+            assert.are.same({ displayID = 1234 }, card.model.shownModel, "by display ID when the data has it")
+            assert.are.equal("Level 12", card.level.text)
+        end)
+
+        it("names a rare, and its attack speed off 2.0, in the level line", function()
+            local client = hunter(10)
+            local panel = tab(client)
+            assert.are.equal("Rare Cat (rare)", open(panel, "Rare Cat (rare)").title.text)
+            click(panel.card.back)
+            assert.are.equal("Level 5, attack speed 1.2", open(panel, "Spider").level.text)
+        end)
+
+        it("shows the beast's map with its spawn dots, the player's map first; a dot goes there", function()
+            local client = hunter(10)
+            local panel = tab(client)
+            local card = open(panel, "Spider")
+            assert.are.equal("Elwynn Forest", card.mapName.text, "the player is in Elwynn Forest")
+            assert.are.same({ "Elwynn Forest", "Tirisfal Glades" }, maps(card))
+            assert.are.same({ "10,10" }, dots(card))
+            assert.are.equal(ELWYNN * 100 + 1, card.tiles[1].texture)
+            click(card.maps[2])
+            assert.are.equal("Tirisfal Glades", card.mapName.text)
+            assert.are.same({ "20,20", "25,25", "30,30" }, dots(card))
+            -- 12 tiles of 256 pixels for 1002 by 668: the last column and row cut to fit.
+            local shown = 0
+            for _, tile in ipairs(card.tiles) do
+                if tile.shown then shown = shown + 1 end
+            end
+            assert.are.equal(12, shown)
+            assert.are.equal(TIRISFAL * 100 + 1, card.tiles[1].texture)
+            assert.are.same({ 0, (1002 - 768) / 256, 0, 1 }, card.tiles[4].texCoord, "tile 4 ends the first row")
+            assert.are.same({ 0, 1, 0, (668 - 512) / 256 }, card.tiles[9].texCoord, "tile 9 starts the last row")
+            click(card.dots[1])
+            assert.is_true(client:printedContains("Spider, Tirisfal Glades 20.0, 20.0"))
+            assert.are.equal("Spider", client.Addon:GetModule("BeastMap").tameTarget)
+        end)
+
+        it("shows one map without map buttons, and dots without art where the client has none", function()
+            local client = hunter(10)
+            local panel = tab(client)
+            local card = open(panel, "Rare Cat (rare)")
+            assert.are.equal("Tirisfal Glades", card.mapName.text, "its only map")
+            assert.are.same({}, maps(card))
+            click(card.back)
+            client.Addon.data.beasts[104].pins[1430] = { 5, 5, 6, 6 }
+            card = open(panel, "Rare Cat (rare)")
+            assert.are.same({ "Tirisfal Glades", "Border Valley" }, maps(card), "neither here: by uiMapID")
+            click(card.maps[2])
+            assert.are.equal("Border Valley", card.mapName.text)
+            assert.are.same({ "5,5", "6,6" }, dots(card))
+            assert.is_false(card.tiles[1].shown)
+        end)
+
+        it("says where a beast in an instance lives, without a map", function()
+            local client = hunter(10)
+            local panel = tab(client)
+            local card = open(panel, "Cave Boar")
+            assert.is_false(card.map.shown)
+            assert.are.equal("In Wailing Caverns", card.mapName.text)
+            assert.are.same({}, dots(card))
+        end)
+
+        it("hunts the beast for the first rank the hunter lacks, and stops again", function()
+            local client = hunter(10)
+            client:openTrainer({ { "Claw", "used", CLAW } }):closeTrainer()
+            local panel = tab(client)
+            local card = open(panel, "Low Cat")
+            local M = client.Addon:GetModule("BeastMap")
+            assert.are.equal("Hunt", card.hunt:GetText())
+            click(card.hunt)
+            assert.are.same({ npc = 101, spellID = CLAW_2 }, M:Hunt())
+            assert.are.equal("Stop the hunt", card.hunt:GetText())
+            click(card.hunt)
+            assert.is_nil(M:Hunt())
+            assert.are.equal("Hunt", card.hunt:GetText())
+            click(card.back)
+            client:openTrainer({ { "Bite", "used", BITE } }):closeTrainer()
+            card = open(panel, "Spider")
+            assert.is_false(card.hunt.shown, "nothing left to learn from it")
+        end)
+    end)
+
     describe("with more beasts than rows", function()
         ---SmallData and 40 more cats, level 20 each, each also in a den of its own.
         local function many(Addon)

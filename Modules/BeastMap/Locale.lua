@@ -226,5 +226,11 @@ L.BEASTS_COLUMN_SPEED = "Speed"
 L.BEASTS_RARE_NAME = "%s (rare)"
 -- The tooltip of a row's map button. %s: the beast's name.
 L.BEASTS_GO = "The way to %s"
+-- A beast's card, opened from the list: the button back to the list; the family and its diet (first %s: the family, second: FAMILY_EATS); the buttons that start and end the hunt for the beast; for a beast in an instance, instead of its map (%s: the instance).
+L.BEASTS_BACK = "Back"
+L.BEASTS_FAMILY_DIET = "%s. %s"
+L.BEASTS_HUNT = "Hunt"
+L.BEASTS_HUNT_STOP = "Stop the hunt"
+L.BEASTS_INSIDE = "In %s"
 
 -- stylua: ignore end

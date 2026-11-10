@@ -567,6 +567,9 @@
 ---@field GoToBeast fun(self: AddonBeastMap, npc: number, pinMap: number?, pinX: number?, pinY: number?): boolean
 ---@field PinSpell fun(npc: number): number? the rank a beast's pin shows
 ---@field AttackSpeed fun(npc: number): number? a tameable beast's attack speed where it is not 2.0 (Tooltip.lua)
+---@field StandingText fun(spellID: number): string a rank's text in the colour of the hunter's standing (Beasts.lua)
+---@field CreateBeastCard fun(panel: AddonBeastsPanel, skin: AddonButtonHolderSkin): AddonBeastCard
+---@field FillBeastCard fun(card: AddonBeastCard, npc: number)
 ---@field Hunt fun(self: AddonBeastMap): AddonHunt? the hunt on (Hunt.lua)
 ---@field IsHunting fun(self: AddonBeastMap, npc: number?, spellID: number?): boolean
 ---@field StartHunt fun(self: AddonBeastMap, npc: number, spellID: number, map: number?, x: number?, y: number?)
@@ -985,6 +988,37 @@
 ---@field list Frame holds the rows; takes the mouse wheel
 ---@field bar AddonScrollBar
 ---@field rows AddonBeastRow[]
+---@field browse Frame holds the filters, count and list; hidden while a card shows
+---@field card AddonBeastCard
+---@field chosen number? the beast whose card shows
+
+---A beast's card on the Beasts tab (Modules\BeastMap\BeastCard.lua).
+---@class AddonBeastCard: Frame
+---@field back Button
+---@field title FontString
+---@field level FontString
+---@field family FontString with its diet
+---@field teaches FontString a coloured line per rank
+---@field model PlayerModel
+---@field hunt Button
+---@field mapName FontString the shown map's name, or the instance's
+---@field map Frame the map's art and dots
+---@field tiles Texture[] the art tiles, made as needed
+---@field dots AddonBeastDot[] the spawn dots, made as needed
+---@field maps AddonBeastMapButton[] a button per map the beast lives on
+---@field npc number? the beast shown
+---@field shownMap number? the uiMapID shown
+---@field spellID number? the first rank it teaches that the hunter lacks: Hunt's
+
+---@class AddonBeastDot: Button
+---@field disc Texture
+---@field card AddonBeastCard
+---@field x number percent
+---@field y number
+
+---@class AddonBeastMapButton: Button
+---@field label FontString
+---@field map number?
 
 ---@class AddonBeastRow: Button
 ---@field stripe Texture every other row

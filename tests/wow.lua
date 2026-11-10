@@ -756,6 +756,7 @@ function NewClient(opts)
     -- instance) and on its map (0..1). client.mapWorld: where each map lies in the world, its
     -- middle (y, x as UnitPosition gives them), size in yards and continent; map 1430 lies right
     -- east of Elwynn Forest, the player in Elwynn's middle.
+    client.mapArt = { [1429] = true, [1420] = true }
     client.worldPos = { -9000, 400, 0 }
     client.mapPos = { 0.5, 0.5 }
     client.mapWorld = {
@@ -788,6 +789,20 @@ function NewClient(opts)
         end,
         GetAreaInfo = function(areaID)
             return AREA_NAMES[areaID]
+        end,
+        -- Map art for Elwynn Forest and Tirisfal Glades only (client.mapArt): one layer of 256
+        -- pixel tiles, 4 by 3 for a zone's 1002 by 668; tile n of map m is file m * 100 + n.
+        GetMapArtLayers = function(uiMapID)
+            if not client.mapArt[uiMapID] then return nil end
+            return { { layerWidth = 1002, layerHeight = 668, tileWidth = 256, tileHeight = 256 } }
+        end,
+        GetMapArtLayerTextures = function(uiMapID, layerIndex)
+            if not client.mapArt[uiMapID] or layerIndex ~= 1 then return nil end
+            local files = {}
+            for n = 1, 12 do
+                files[n] = uiMapID * 100 + n
+            end
+            return files
         end,
         -- Where the player stands: the middle of Elwynn Forest.
         GetBestMapForUnit = function(unit)

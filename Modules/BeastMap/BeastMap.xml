@@ -12,4 +12,5 @@
     <Script file="Abilities.lua"/>
     <Script file="Families.lua"/>
     <Script file="Beasts.lua"/>
+    <Script file="BeastCard.lua"/>
 </Ui>

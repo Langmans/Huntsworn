@@ -177,7 +177,11 @@
   yellow skipped, grey known), its attack speed when not 2.0 and a button
   that shows the way there. Filters, kept in the profile: a name search,
   ability, family, diet, zone (all, the one you are in, or one), "You: has
-  already / not yet", in reach and rares. A scrollbar beside the rows.
+  already / not yet", in reach and rares. A scrollbar beside the rows. A
+  click on a beast opens its card: levels, family and diet, what it teaches,
+  its model, and its zone's map with a dot per spawn spot (a click shows the
+  way there; a button per map when it lives on several), and Hunt for the
+  first rank it teaches that you lack.
 - Families tab: the list by family or by role (Offense, Defense, General on
   Classic, the strongest first; or named Ferocity, Tenacity, Cunning with a
   switch on the Beast Map page), scrolled with the mouse wheel, and with
