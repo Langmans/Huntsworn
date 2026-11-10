@@ -181,8 +181,8 @@ describe("the Dev Probe", function()
         local tame = probe.tames[1]
         assert.are.equal(3825, tame.npc)
         assert.are.same({ "Bite 1" }, tame.knows)
-        -- Ghostpaw Alpha teaches Bite 4, Cower 3 and Furious Howl 2 (named as the client names them).
-        assert.are.equal(3, #tame.expected)
+        -- Ghostpaw Alpha teaches Bite 4 and Furious Howl 2 (named as the client names them).
+        assert.are.equal(2, #tame.expected)
         assert.is_false(tame.match)
     end)
 

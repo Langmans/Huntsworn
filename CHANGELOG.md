@@ -19,7 +19,9 @@
 - The beasts that teach pet abilities come from LibTameable-1.0, for Classic
   Era, Burning Crusade and WoW: Forever; Burning Crusade gets Beast Map and
   its families (Dragonhawk, Ravager, Warp Stalker, Sporebat, Nether Ray,
-  Serpent). Each client loads only its own beast data.
+  Serpent). Each client loads only its own beast data. On WoW: Forever each
+  beast teaches what Wowhead's hunter pets tool says it knows when tamed, and
+  Forever's new beasts (Zephras Isle and others) are in.
 - What a pet eats on Classic Era and Burning Crusade comes from LibTameable
   too, each family's diet from the client's own tables.
 

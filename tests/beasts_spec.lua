@@ -36,7 +36,7 @@ end
 
 local BITE, CLAW_2, SWIPE = 17253, 16828, 1264494
 local FOREST_SPIDER, GRIZZLED_BLACK_BEAR, NIGHT_WEB_SPIDER = 30, 1188, 1505
-local ELWYNN, TIRISFAL, SPIDER, CAT, BEAR = 1429, 1420, 3, 2, 4
+local ELWYNN, SPIDER, CAT, BEAR = 1429, 3, 2, 4
 
 describe("the beast data", function()
     local ranks, beasts, families = Load()
@@ -138,10 +138,10 @@ describe("the beast data", function()
         assert.is_true(count.stable >= 30, "stable masters")
     end)
 
-    it("has the teachers Wowhead's data leaves out, from its comments and from Tamed", function()
+    it("has what Wowhead's hunter-pets tool says a beast teaches, and no more", function()
         assert.is_true(tContains(ranks[SWIPE].teachers, GRIZZLED_BLACK_BEAR))
         assert.are.equal(BEAR, beasts[GRIZZLED_BLACK_BEAR].family)
-        assert.is_true(tContains(ranks[BITE].teachers, NIGHT_WEB_SPIDER))
-        assert.is_not_nil(beasts[NIGHT_WEB_SPIDER].pins[TIRISFAL])
+        assert.is_nil(beasts[NIGHT_WEB_SPIDER], "only can learn Bite: teaches nothing")
+        assert.is_not_nil(beasts[FOREST_SPIDER].pins[ELWYNN])
     end)
 end)

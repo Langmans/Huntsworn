@@ -252,8 +252,8 @@ describe("AbilityLearned", function()
             missing.func()
             assert.is_true(client:printedContains("Every learn from a pet is in Huntsworn's beast data."))
             M.db.char.history = {
-                -- Greater Fleshripper (154) teaches Claw 3 in the data.
-                { name = "Claw", rank = "Rank 3", pet = "Scraps", npc = 154, zone = "Westfall", t = 1 },
+                -- Black Bear Patriarch (1189) teaches Claw 3 in the data.
+                { name = "Claw", rank = "Rank 3", pet = "Scraps", npc = 1189, zone = "Westfall", t = 1 },
                 { name = "Claw", rank = "Rank 2", pet = "Fluffy", npc = 165189, zone = "Darkshore", t = 2 },
                 { name = "Charge", rank = "Rank 1", zone = "Darkshore", t = 3 },
                 -- A rank the data has no entry for at all.
