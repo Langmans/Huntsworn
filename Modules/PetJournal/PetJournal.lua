@@ -221,7 +221,9 @@ end
 ---Takes what the stable's lists say of each pet: its name, level, family and loyalty, and the
 ---model it shows (displayID) and the beast it was tamed as (creatureID). A pet not in the journal
 ---yet gets an entry. Classic Era's lists give no number (NamedKey) and the loyalty as text; a
----number the client hides leaves the pet out.
+---number the client hides leaves the pet out. WoW: Forever's loyaltyLevel counts from 0 (a fresh
+---tame, Rebellious, is 0 with an empty name; Unruly is 1), the journal's from 1 as the client's
+---own texts do.
 ---@param list AddonStablePet[]
 function M:ReadStableList(list)
     for _, info in ipairs(list) do
@@ -239,7 +241,8 @@ function M:ReadStableList(list)
             entry.first.npc = info.creatureID or entry.first.npc
             entry.name, entry.level, entry.family = info.name, info.level, info.familyName
             entry.displayID = info.displayID or entry.displayID
-            local level, name = info.loyaltyLevel, info.loyaltyName
+            local level = info.loyaltyLevel and info.loyaltyLevel + 1
+            local name = info.loyaltyName ~= "" and info.loyaltyName or nil
             if info.loyaltyText then
                 local textLevel, textName = Addon.LoyaltyFromText(info.loyaltyText)
                 level, name = level or textLevel, name or textName
@@ -291,8 +294,11 @@ end
 ---number, which is not the pet's on Forever) into the stable's entry of the same name and family.
 ---A pet tamed this session (a Creature GUID key) waits for Adopt, and a past pet is never merged:
 ---a new pet may carry a released one's name. A pet neither in the lists nor out is one the hunter
----no longer has (released, or lost): it is marked past, until it is seen again. On the classic clients an entry under a Creature GUID, a taming quest's beast kept
----before the journal left those out, goes.
+---no longer has (released, or lost): it is marked past, until it is seen again; so is a pet tamed
+---this session once it is not out (Adopt still finds it after a relog). On the classic clients an
+---entry under a Creature GUID, a taming quest's beast kept before the journal left those out, goes.
+---So does an entry without a name that is not out: on WoW: Forever the pet is "Hunter Pet" (165189)
+---for a few seconds after a tame, unnamed and not in the stable, under its GUID's number.
 function M:ReadStable()
     local stable = Addon.C.StableInfo
     wipe(stableKeys)
@@ -310,10 +316,12 @@ function M:ReadStable()
     local creatures = CreaturesArePets()
     for key, entry in pairs(pets) do
         local creature = key:find("^Creature%-") ~= nil
-        if creature and not creatures then
+        local out = key == self.current
+        local fleeting = not entry.name and not entry.first.tamed and not out and not stableKeys[key]
+        if (creature and not creatures) or fleeting then
             pets[key] = nil
         else
-            entry.past = not (stableKeys[key] or key == self.current or creature) or nil
+            entry.past = not (stableKeys[key] or out) or nil
         end
     end
 end

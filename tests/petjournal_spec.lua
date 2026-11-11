@@ -104,6 +104,45 @@ describe("Pet Journal", function()
         assert.is_truthy(M:Pets()[tostring(0xA8C65C43)], "another family")
     end)
 
+    it("reads WoW: Forever's stable loyalty, which counts from 0, without a false rise", function()
+        -- Seen 2026-11-11: a fresh tame (Rebellious) listed as 0 with no name, an Unruly cat as 1.
+        local client = NewClient()
+        client.stable.active = {
+            { petNumber = FLUFFY, name = "Fluffy", familyName = "Cat", loyaltyLevel = 3, loyaltyName = "Dependable" },
+        }
+        client.stable.stabled =
+            { { petNumber = 20, name = "Rex", familyName = "Boar", loyaltyLevel = 0, loyaltyName = "" } }
+        client:login():advance(1)
+        client:fire("PET_STABLE_UPDATE"):fire("UNIT_PET", "player")
+        local pets = client.Addon:GetModule("PetJournal"):Pets()
+        assert.are.same({ 4, "Dependable" }, { pets[tostring(FLUFFY)].loyalty, pets[tostring(FLUFFY)].loyaltyName })
+        assert.are.same({}, pets[tostring(FLUFFY)].rises, "no rise from the stable's count")
+        assert.are.same({ 1 }, { pets["20"].loyalty, pets["20"].loyaltyName })
+    end)
+
+    it("drops a nameless entry of a pet out for a moment while a tame settles", function()
+        -- WoW: Forever, 2026-11-11: right after each tame the pet was "Hunter Pet" (165189) for a few
+        -- seconds, without a name or a stable entry, and got an entry under its GUID's number.
+        local client = NewClient():login():advance(1)
+        local pets = client.Addon:GetModule("PetJournal"):Pets()
+        pets["507632844"] = { first = { t = 1, npc = 165189 }, out = 8, deaths = 0, rises = {}, abilities = {} }
+        client:fire("PET_STABLE_UPDATE")
+        assert.is_nil(pets["507632844"])
+        assert.is_truthy(pets[tostring(FLUFFY)], "the named pet out stays")
+    end)
+
+    it("counts a fresh tame that is no longer out as past, until it comes back", function()
+        local client = NewClient({ noPet = true }):login()
+        local fresh = "Creature-0-5250-0-1-3825-0000ABCDEF"
+        client.petGUID = fresh
+        client:summon("Whiskers", { 17253 }):advance(1)
+        client:petGone():fire("UNIT_PET", "player"):fire("PET_STABLE_UPDATE")
+        local pets = client.Addon:GetModule("PetJournal"):Pets()
+        assert.is_true(pets[fresh].past)
+        client:summon("Whiskers", { 17253 }):advance(1)
+        assert.is_nil(pets[fresh].past)
+    end)
+
     it("takes the zone later when the client has none yet at login", function()
         local client = NewClient()
         client.zone = ""
