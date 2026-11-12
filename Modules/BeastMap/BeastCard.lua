@@ -224,6 +224,7 @@ function M.CreateBeastCard(panel, skin)
     card.back:SetSize(80, 22)
     card.back:SetPoint("TOPLEFT")
     card.back:SetText(L.BEASTS_BACK)
+    if skin.Button then skin.Button(card.back) end
     card.back:SetScript("OnClick", function()
         panel.chosen = nil
         Addon:RefreshWindow("beasts")
@@ -246,6 +247,7 @@ function M.CreateBeastCard(panel, skin)
     card.hunt:SetSize(120, 22)
     card.hunt:SetPoint("TOPLEFT", card.model, "BOTTOMLEFT", 0, -6)
     card.hunt:SetScript("OnClick", OnHuntClick)
+    if skin.Button then skin.Button(card.hunt) end
     card.mapName = Text(card, skin, 14, "GameFontNormal")
     card.mapName:SetPoint("TOPLEFT", MAP_X, -32)
     card.mapName:SetTextColor(GOLD[1], GOLD[2], GOLD[3])

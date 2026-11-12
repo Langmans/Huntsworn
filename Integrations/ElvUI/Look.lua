@@ -3,6 +3,7 @@ local _, ns = ...
 -- Huntsworn's toasts, buttons and lists in ElvUI's look, through the methods ElvUI's Toolkit gives
 -- every frame: SetTemplate for the backdrop and border, StyleButton for hover and press,
 -- FontTemplate for text, SetTexCoords for its icon crop; its value colour as the toast's accent.
+-- The window's close button, push buttons and text boxes go through ElvUI's Skins module.
 -- Only when ElvUI is loaded; it is in Huntsworn's OptionalDeps, so its Toolkit has run.
 
 if type(ElvUI) ~= "table" then return end
@@ -85,6 +86,26 @@ local function Close(button)
     if skins and skins.HandleCloseButton then skins:HandleCloseButton(button) end
 end
 
+---A push button as ElvUI's Skins module draws its own.
+---@param button Button
+local function PushButton(button)
+    local skins = E:GetModule("Skins")
+    if skins and skins.HandleButton then skins:HandleButton(button) end
+end
+
+---A text box as ElvUI's Skins module draws its own.
+---@param box EditBox
+local function EditBox(box)
+    local skins = E:GetModule("Skins")
+    if skins and skins.HandleEditBox then skins:HandleEditBox(box) end
+end
+
+---A picker or a check box's square: ElvUI's default backdrop and border.
+---@param frame Frame
+local function Field(frame)
+    (frame --[[@as ElvUIFrame]]):SetTemplate("Default")
+end
+
 ---The look of a toast, for a frame of this name: ElvUI's transparent backdrop is its panel.
 ---@param frameName string
 ---@return AddonSkinStyle
@@ -107,4 +128,7 @@ Addon:RegisterButtonHolderSkin("elvui", {
     CropsIcons = CropsIcons,
     Accent = Accent,
     Close = Close,
+    Button = PushButton,
+    EditBox = EditBox,
+    Field = Field,
 })

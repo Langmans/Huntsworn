@@ -194,6 +194,9 @@
 ---@field CropsIcons (fun(): boolean)? whether the UI's own setting crops icons; Addon's switch follows it, greyed
 ---@field Accent (fun(): number[])? the colour that marks what is chosen (the tab that shows); the game's gold without one
 ---@field Close (fun(button: Button))? a close button (UIPanelCloseButton), in the UI's own look
+---@field Button (fun(button: Button))? a push button (UIPanelButtonTemplate), in the UI's own look
+---@field EditBox (fun(box: EditBox))? a text box (InputBoxTemplate), in the UI's own look
+---@field Field (fun(frame: Frame))? a picker or a check box's square: the UI's own box behind it, instead of Huntsworn's dark one
 
 ---The button skin choices in the profile.
 ---@class AddonButtonSettings
@@ -970,6 +973,7 @@
 
 ---@class AddonCheckText: Button
 ---@field label FontString
+---@field box Frame the square, in the look's Field or the game's check box
 ---@field check Texture shown while on
 
 ---A family's ability in the Families tab; a click shows its teachers in the Abilities tab.
@@ -1050,7 +1054,6 @@
 
 ---A dropdown of the window's tabs (Core\Widgets.lua).
 ---@class AddonPicker: Button
----@field back Texture
 ---@field arrow Texture
 ---@field label FontString "<title>: <choice>"
 ---@field title string

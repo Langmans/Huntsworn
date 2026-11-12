@@ -29,6 +29,8 @@
 ---ElvUI's Skins module (E:GetModule("Skins")), the part Huntsworn uses.
 ---@class ElvUISkins
 ---@field HandleCloseButton (fun(self: ElvUISkins, button: Button))?
+---@field HandleButton (fun(self: ElvUISkins, button: Button))?
+---@field HandleEditBox (fun(self: ElvUISkins, box: EditBox))?
 
 ---ElvUI's profile (E.db), as far as Huntsworn reads it: Eltruism's shadow settings.
 ---@class ElvUIProfile

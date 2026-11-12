@@ -167,9 +167,13 @@ end
 function Addon.Picker(parent, skin, width, title, OnPick)
     local picker = CreateFrame("Button", nil, parent) --[[@as AddonPicker]]
     picker:SetSize(width, PICKER_HEIGHT)
-    picker.back = picker:CreateTexture(nil, "BACKGROUND")
-    picker.back:SetAllPoints()
-    picker.back:SetColorTexture(0, 0, 0, 0.4)
+    if skin.Field then
+        skin.Field(picker)
+    else
+        local back = picker:CreateTexture(nil, "BACKGROUND")
+        back:SetAllPoints()
+        back:SetColorTexture(0, 0, 0, 0.4)
+    end
     picker.arrow = picker:CreateTexture(nil, "ARTWORK")
     picker.arrow:SetSize(12, 12)
     picker.arrow:SetPoint("RIGHT", -4, 0)

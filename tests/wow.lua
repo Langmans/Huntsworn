@@ -1879,10 +1879,16 @@ function NewClient(opts)
     -- Toolkit adds to every frame, recording what was asked of them.
     ElvUI = nil
     if opts.elvui then
-        -- Its Skins module, whose HandleCloseButton marks the button it styled.
+        -- Its Skins module, whose Handle functions mark what they styled.
         local skins = {
             HandleCloseButton = function(_, button)
                 button.elvSkinned = true
+            end,
+            HandleButton = function(_, button)
+                button.elvSkinned = "button"
+            end,
+            HandleEditBox = function(_, box)
+                box.elvSkinned = "editbox"
             end,
         }
         ElvUI = {

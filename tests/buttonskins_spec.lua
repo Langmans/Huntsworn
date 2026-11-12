@@ -176,6 +176,28 @@ describe("button skins", function()
             assert.is_true(row.go.icon.texCoordsSet, "ElvUI's icon crop")
         end)
 
+        it("draw the window's buttons, search box, pickers and switches in ElvUI's look", function()
+            local client = NewClient({ elvui = true }):login()
+            client.Addon:OpenWindow("beasts")
+            local panel = client.Addon.window.panels.beasts
+            assert.are.equal("button", panel.card.back.elvSkinned)
+            assert.are.equal("button", panel.card.hunt.elvSkinned)
+            assert.are.equal("editbox", panel.search.elvSkinned)
+            assert.are.equal("Default", panel.pickers.zone.template)
+            assert.are.equal("Default", panel.reach.box.template)
+            assert.are.equal("Default", panel.rares.box.template)
+        end)
+
+        it("leave those as the game draws them without ElvUI", function()
+            local client = NewClient():login()
+            client.Addon:OpenWindow("beasts")
+            local panel = client.Addon.window.panels.beasts
+            assert.is_nil(panel.card.back.elvSkinned)
+            assert.is_nil(panel.search.elvSkinned)
+            assert.is_nil(panel.pickers.zone.template)
+            assert.is_nil(panel.reach.box.template)
+        end)
+
         it("with Eltruism's shadows on, put its shadow around the window and the toast", function()
             local client = NewClient({ elvui = true, eltruism = { enable = true, length = 4 } }):login()
             client:slash("")
