@@ -23,7 +23,8 @@ local GO_ICON = "Interface\\Icons\\INV_Misc_Map_01"
 local CHECK_BOX, CHECK_MARK = "Interface\\Buttons\\UI-CheckBox-Up", "Interface\\Buttons\\UI-CheckBox-Check"
 local GOLD, DIM, WHITE = { 1, 0.82, 0 }, { 0.6, 0.6, 0.6 }, { 1, 1, 1 }
 -- The list's orders, chosen by a click on a column head.
-local SORTS = { level = "level", distance = "distance" }
+local SORTS = { name = "name", family = "family", level = "level", distance = "distance", speed = "speed" }
+local ARROW_UP, ARROW_DOWN = "Interface\\Buttons\\Arrow-Up-Up", "Interface\\Buttons\\Arrow-Down-Up"
 local QUESTION_MARK = 134400
 -- A rank's colour code in the Teaches column, by how the hunter stands to it (M.Lacking).
 local STANDING = { above = "ff00ff00", gap = "ffffff00", known = "ff808080" }
@@ -205,14 +206,45 @@ local function ByLevel(a, b)
     return a < b
 end
 
----Two beasts nearest first in a straight line; those it cannot place (the same huge distance) by
----level.
+---A beast's value in the column the list is sorted by.
+---@type table<string, fun(npc: number): string|number>
+local SORT_KEYS = {
+    [SORTS.name] = function(npc)
+        return names[npc]
+    end,
+    [SORTS.family] = function(npc)
+        return Addon.FamilyName(Addon.data.beasts[npc].family) or ""
+    end,
+    [SORTS.level] = function(npc)
+        return Addon.data.beasts[npc].minLevel
+    end,
+    [SORTS.distance] = function(npc)
+        return yards[npc]
+    end,
+    -- Without a speed in the data a beast attacks at the usual 2.0.
+    [SORTS.speed] = function(npc)
+        return M.AttackSpeed(npc) or 2
+    end,
+}
+-- Each shown beast's value in the sorted column, and the direction; set before each sort.
+---@type table<number, string|number>
+local sortKey = {}
+local descending = false
+
+---Two beasts in the sorted column's order, either way round; ties by level. A beast it cannot
+---place (a huge distance) comes last both ways.
 ---@param a number
 ---@param b number
 ---@return boolean
-local function ByDistance(a, b)
-    if yards[a] ~= yards[b] then return yards[a] < yards[b] end
-    return ByLevel(a, b)
+local function BySortKey(a, b)
+    local ka, kb = sortKey[a], sortKey[b]
+    if ka == kb then return ByLevel(a, b) end
+    if ka == math.huge or kb == math.huge then return kb == math.huge end
+    -- One column's values are all strings or all numbers.
+    local first = ka --[[@as number]]
+    local second = kb --[[@as number]]
+    if descending then return first > second end
+    return first < second
 end
 
 ---The beasts that pass the filters, in the order chosen, with the yards to each in `yards`.
@@ -221,6 +253,7 @@ end
 local function Matching(filter)
     wipe(shown)
     wipe(yards)
+    wipe(sortKey)
     local search, here = filter.search:lower(), C_Map.GetBestMapForUnit("player")
     for npc, beast in
         pairs(Addon.data.beasts --[[@as table<number, AddonBeast>]])
@@ -231,7 +264,13 @@ local function Matching(filter)
             yards[npc] = M.YardsTo(npc)
         end
     end
-    table.sort(shown, filter.sort == SORTS.distance and ByDistance or ByLevel)
+    ---@type fun(npc: number): string|number
+    local Key = SORT_KEYS[filter.sort] or SORT_KEYS[SORTS.level]
+    for _, npc in ipairs(shown) do
+        sortKey[npc] = Key(npc)
+    end
+    descending = filter.descending
+    table.sort(shown, BySortKey)
     return shown
 end
 
@@ -389,8 +428,9 @@ local function Row(panel, skin, index)
     return row
 end
 
----The column heads above the rows, in gold; Level and Distance sort the list, the one it is
----sorted by in white.
+---The column heads above the rows, in gold. Each but Teaches sorts the list; a second click on the
+---same head turns the order round. The head it is sorted by is white, with an arrow for the
+---direction.
 ---@param panel AddonBeastsPanel
 ---@param skin AddonButtonHolderSkin
 local function Heads(panel, skin)
@@ -414,26 +454,37 @@ local function Heads(panel, skin)
     ---@param label string
     ---@param value string
     ---@param right boolean?
-    ---@return AddonTextButton
+    ---@return AddonSortHead
     local function SortHead(x, label, value, right)
-        local head = CreateFrame("Button", nil, panel.browse) --[[@as AddonTextButton]]
+        local head = CreateFrame("Button", nil, panel.browse) --[[@as AddonSortHead]]
         head.label, head.value = Head(x, label, right, head), value
         head:SetAllPoints(head.label)
-        -- A click sorts the list by this head, kept in the profile.
+        head.arrow = head:CreateTexture(nil, "OVERLAY")
+        head.arrow:SetSize(12, 12)
+        -- Beside the text: after a left-aligned one, before a right-aligned one.
+        if right then
+            head.arrow:SetPoint("RIGHT", head.label, "LEFT", -2, 0)
+        else
+            head.arrow:SetPoint("LEFT", head.label, "RIGHT", 2, 0)
+        end
+        -- A click sorts the list by this head, or the other way round when it is already; kept in
+        -- the profile.
         head:SetScript("OnClick", function()
-            Filter().sort = value --[[@as "level"|"distance"]]
+            local filter = Filter()
+            filter.descending = filter.sort == value and not filter.descending
+            filter.sort = value --[[@as "name"|"family"|"level"|"distance"|"speed"]]
             Changed(panel)
         end)
         return head
     end
     local speedRight = -ROW_HEIGHT - 8
-    Head(NAME_X, L.BEASTS_COLUMN_BEAST)
-    Head(FAMILY_X, L.BEASTS_COLUMN_FAMILY)
     Head(TEACHES_X, L.BEASTS_COLUMN_TEACHES)
-    Head(speedRight, L.BEASTS_COLUMN_SPEED, true)
     panel.sorts = {
+        name = SortHead(NAME_X, L.BEASTS_COLUMN_BEAST, SORTS.name),
+        family = SortHead(FAMILY_X, L.BEASTS_COLUMN_FAMILY, SORTS.family),
         level = SortHead(LEVEL_X, L.BEASTS_COLUMN_LEVEL, SORTS.level),
         distance = SortHead(speedRight - SPEED_WIDTH - 4, L.BEASTS_COLUMN_DISTANCE, SORTS.distance, true),
+        speed = SortHead(speedRight, L.BEASTS_COLUMN_SPEED, SORTS.speed, true),
     }
 end
 
@@ -579,8 +630,11 @@ local function FillFilters(panel, filter)
     panel.reach.check:SetShown(filter.reach)
     panel.rares.check:SetShown(filter.rares)
     for value, head in pairs(panel.sorts) do
-        local colour = value == filter.sort and WHITE or GOLD
+        local sorted = value == filter.sort
+        local colour = sorted and WHITE or GOLD
         head.label:SetTextColor(colour[1], colour[2], colour[3])
+        head.arrow:SetShown(sorted)
+        head.arrow:SetTexture(filter.descending and ARROW_DOWN or ARROW_UP)
     end
     if panel.search:GetText() ~= filter.search then panel.search:SetText(filter.search) end
     panel.hint:SetShown(filter.search == "")

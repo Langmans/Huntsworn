@@ -178,8 +178,10 @@
   that shows the way there. Filters, kept in the profile: a name search,
   ability, family, diet, zone (all, the one you are in, or one), "You: has
   already / not yet", in reach and rares. A scrollbar beside the rows. A
-  click on the Distance head sorts nearest first in a straight line (yards
-  in that column), on Level by level again. A
+  click on a column head (Beast, Family, Level, Distance, Speed) sorts by
+  it, a second click the other way round, with an arrow on that head.
+  Distance is in a straight line, in yards in its own column; beasts it
+  cannot place stay last. Speed counts a beast without data as 2.0. A
   click on a beast opens its card: levels, family and diet, what it teaches,
   its model, and its zone's map with a dot per spawn spot (a click shows the
   way there; a button per map when it lives on several), and Hunt for the

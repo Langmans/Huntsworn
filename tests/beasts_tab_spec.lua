@@ -258,6 +258,53 @@ describe("the Beasts tab", function()
         assert.are.equal("Spider", column(panel)[2])
     end)
 
+    it("sorts by any column head; a second click on it turns the order round", function()
+        local client = hunter(10)
+        local panel = tab(client)
+        local sorts, filter = panel.sorts, client.Addon:GetModule("BeastMap"):Settings().beasts
+        click(sorts.speed)
+        assert.are.same(
+            { "Spider", "Low Cat", "Rare Cat (rare)", "Cave Boar", "Field Boar", "High Cat" },
+            column(panel),
+            "1.2 first; the rest attack at 2.0, by level"
+        )
+        assert.is_true(sorts.speed.arrow.shown)
+        assert.are.equal("Interface\\Buttons\\Arrow-Up-Up", sorts.speed.arrow.texture)
+        assert.is_false(sorts.level.arrow.shown, "only the head it is sorted by")
+        click(sorts.speed)
+        assert.is_true(filter.descending)
+        assert.are.equal("Interface\\Buttons\\Arrow-Down-Up", sorts.speed.arrow.texture)
+        assert.are.same(
+            { "Low Cat", "Rare Cat (rare)", "Cave Boar", "Field Boar", "High Cat", "Spider" },
+            column(panel),
+            "ties stay by level"
+        )
+        click(sorts.name)
+        assert.is_false(filter.descending, "another head starts ascending")
+        assert.are.same(
+            { "Cave Boar", "Field Boar", "High Cat", "Low Cat", "Rare Cat (rare)", "Spider" },
+            column(panel)
+        )
+        click(sorts.family)
+        assert.are.same(
+            { "Cave Boar", "Field Boar", "Low Cat", "Rare Cat (rare)", "High Cat", "Spider" },
+            column(panel)
+        )
+        click(sorts.level)
+        click(sorts.level)
+        assert.are.same(
+            { "High Cat", "Cave Boar", "Field Boar", "Rare Cat (rare)", "Low Cat", "Spider" },
+            column(panel)
+        )
+        click(sorts.distance)
+        click(sorts.distance)
+        assert.are.same(
+            { "Spider", "Field Boar", "High Cat", "Low Cat", "Rare Cat (rare)", "Cave Boar" },
+            column(panel),
+            "farthest first; those it cannot place stay last"
+        )
+    end)
+
     it("closes a pick list with a second click on its picker", function()
         local client = hunter(10)
         local panel = tab(client)

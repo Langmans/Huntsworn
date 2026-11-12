@@ -624,7 +624,8 @@
 ---@field diet string "all", or a Huntsworn.diets value the beast's family eats
 ---@field zone string|number "all", "here" (the player's map), a uiMapID, or minus an instance's AreaTable ID
 ---@field you "all"|"has"|"lacks" every rank the beast teaches known already, or some not yet
----@field sort "level"|"distance" the list's order: by level, or nearest first in a straight line
+---@field sort "name"|"family"|"level"|"distance"|"speed" the column the list is sorted by (distance: in a straight line)
+---@field descending boolean the other way round: highest, farthest, slowest first
 ---@field reach boolean only beasts at or below the hunter's level
 ---@field rares boolean only rare beasts
 
@@ -990,7 +991,7 @@
 ---@field list Frame holds the rows; takes the mouse wheel
 ---@field bar AddonScrollBar
 ---@field rows AddonBeastRow[]
----@field sorts {level: AddonTextButton, distance: AddonTextButton} the column heads that sort the list
+---@field sorts {name: AddonSortHead, family: AddonSortHead, level: AddonSortHead, distance: AddonSortHead, speed: AddonSortHead} the column heads that sort the list
 ---@field browse Frame holds the filters, count and list; hidden while a card shows
 ---@field card AddonBeastCard
 ---@field chosen number? the beast whose card shows
@@ -1022,6 +1023,10 @@
 ---@class AddonBeastMapButton: Button
 ---@field label FontString
 ---@field map number?
+
+---A column head of the Beasts tab that sorts the list.
+---@class AddonSortHead: AddonTextButton
+---@field arrow Texture up or down, on the head the list is sorted by
 
 ---@class AddonBeastRow: Button
 ---@field stripe Texture every other row

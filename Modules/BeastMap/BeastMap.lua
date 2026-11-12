@@ -53,6 +53,7 @@ M.defaults = {
             zone = "all",
             you = "all",
             sort = "level",
+            descending = false,
             reach = false,
             rares = false,
         },
