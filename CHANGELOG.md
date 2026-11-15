@@ -184,7 +184,9 @@
   with a scrollbar: a click on a column head (Beast, Family, Level,
   Distance, Speed) sorts by it, a second click the other way round, a third
   back by level; Ctrl-click adds a second column, numbered on the heads.
-  The filter text and the sort are kept in the profile.
+  The filter text and the sort are kept in the profile. With ElvUI, the
+  filter box, the Builder (its close button too) and the scrollbars are in
+  ElvUI's look.
   Distance is in a straight line, in yards in its own column; beasts it
   cannot place stay last. Speed counts a beast without data as 2.0. A
   click on a beast opens its card: levels, family and diet, what it teaches,

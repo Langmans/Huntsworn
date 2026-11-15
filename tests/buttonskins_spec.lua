@@ -193,6 +193,9 @@ describe("button skins", function()
             local builder = panel.filterBox.builder
             assert.is_not_nil(builder.template, "the Builder in the window's own style")
             assert.are.equal("Default", builder.lines[1].join.template, "its chips as fields")
+            assert.is_true(builder.close.elvSkinned, "its close button")
+            assert.are.equal("slider", builder.bar.elvSkinned, "its scrollbar")
+            assert.are.equal("slider", panel.grid.bar.elvSkinned, "the list's scrollbar")
         end)
 
         it("leave those as the game draws them without ElvUI", function()
@@ -203,6 +206,7 @@ describe("button skins", function()
             assert.is_nil(panel.search.elvSkinned)
             assert.is_nil(panel.pickers.zone.template)
             assert.is_nil(panel.reach.box.template)
+            assert.is_nil(panel.grid.bar.elvSkinned)
         end)
 
         it("with Eltruism's shadows on, put its shadow around the window and the toast", function()

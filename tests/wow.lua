@@ -1921,6 +1921,9 @@ function NewClient(opts)
             HandleEditBox = function(_, box)
                 box.elvSkinned = "editbox"
             end,
+            HandleSliderFrame = function(_, slider)
+                slider.elvSkinned = "slider"
+            end,
         }
         ElvUI = {
             {

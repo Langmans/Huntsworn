@@ -196,6 +196,7 @@
 ---@field Close (fun(button: Button))? a close button (UIPanelCloseButton), in the UI's own look
 ---@field Button (fun(button: Button))? a push button (UIPanelButtonTemplate), in the UI's own look
 ---@field EditBox (fun(box: EditBox))? a text box (InputBoxTemplate), in the UI's own look
+---@field ScrollBar (fun(bar: Slider))? a list's scrollbar (a plain vertical Slider), in the UI's own look
 ---@field Field (fun(frame: Frame))? a picker or a check box's square: the UI's own box behind it, instead of Huntsworn's dark one
 
 ---The button skin choices in the profile.

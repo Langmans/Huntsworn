@@ -100,6 +100,13 @@ local function EditBox(box)
     if skins and skins.HandleEditBox then skins:HandleEditBox(box) end
 end
 
+---A list's scrollbar (a plain vertical Slider) as ElvUI's Skins module draws its sliders.
+---@param bar Slider
+local function ScrollBar(bar)
+    local skins = E:GetModule("Skins")
+    if skins and skins.HandleSliderFrame then skins:HandleSliderFrame(bar) end
+end
+
 ---A picker or a check box's square: ElvUI's default backdrop and border.
 ---@param frame Frame
 local function Field(frame)
@@ -130,5 +137,6 @@ Addon:RegisterButtonHolderSkin("elvui", {
     Close = Close,
     Button = PushButton,
     EditBox = EditBox,
+    ScrollBar = ScrollBar,
     Field = Field,
 })

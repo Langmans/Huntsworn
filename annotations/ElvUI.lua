@@ -31,6 +31,7 @@
 ---@field HandleCloseButton (fun(self: ElvUISkins, button: Button))?
 ---@field HandleButton (fun(self: ElvUISkins, button: Button))?
 ---@field HandleEditBox (fun(self: ElvUISkins, box: EditBox))?
+---@field HandleSliderFrame (fun(self: ElvUISkins, slider: Slider))?
 
 ---ElvUI's profile (E.db), as far as Huntsworn reads it: Eltruism's shadow settings.
 ---@class ElvUIProfile

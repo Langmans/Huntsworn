@@ -495,7 +495,19 @@ local function GridSkin(skin)
     end
 
     -- Where the skin has no look of its own for one, LibDataGrid's plain one stays.
-    local Button, EditBox, Field = skin.Button, skin.EditBox, skin.Field
+    local Button, EditBox, Field, ScrollBar, Close = skin.Button, skin.EditBox, skin.Field, skin.ScrollBar, skin.Close
+    if Close then
+        ---@param button Button
+        function own:CloseButton(button)
+            Close(button)
+        end
+    end
+    if ScrollBar then
+        ---@param bar Slider
+        function own:ScrollBar(bar)
+            ScrollBar(bar)
+        end
+    end
     if Button then
         ---@param button Button
         function own:Button(button)
