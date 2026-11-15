@@ -627,10 +627,14 @@
 ---@field diet string "all", or a Huntsworn.diets value the beast's family eats
 ---@field zone string|number "all", "here" (the player's map), a uiMapID, or minus an instance's AreaTable ID
 ---@field you "all"|"has"|"lacks" every rank the beast teaches known already, or some not yet
----@field sort "name"|"family"|"level"|"distance"|"speed" the column the list is sorted by (distance: in a straight line)
----@field descending boolean the other way round: highest, farthest, slowest first
 ---@field reach boolean only beasts at or below the hunter's level
 ---@field rares boolean only rare beasts
+---@field grid AddonBeastsGrid the filter text and the sort of the tab's grid
+
+---The Beasts tab's grid state (LibDataGrid-1.0's view), kept in the profile.
+---@class AddonBeastsGrid
+---@field filter LibDataGridGroup? the filter text as a tree; none for no filter
+---@field sort LibDataGridSortKey[] the columns sorted by, first first; none for by level then name
 
 ---A map's pins as npc, coord pairs, with the position of each coord's npc.
 ---@class AddonBeastMapPins
@@ -992,11 +996,10 @@
 ---@field reach AddonCheckText the In reach switch
 ---@field rares AddonCheckText the Rares switch
 ---@field count FontString how many beasts match
----@field list Frame holds the rows; takes the mouse wheel
----@field bar AddonScrollBar
----@field rows AddonBeastRow[]
----@field sorts {name: AddonSortHead, family: AddonSortHead, level: AddonSortHead, distance: AddonSortHead, speed: AddonSortHead} the column heads that sort the list
----@field browse Frame holds the filters, count and list; hidden while a card shows
+---@field view LibDataGridView the grid's filter text and sort over the beasts the quick filters let through
+---@field filterBox LibDataGridFilterBoxMixin the filter text, with its Builder
+---@field grid LibDataGridGridMixin the list of beasts
+---@field browse Frame holds the filters, count and grid; hidden while a card shows
 ---@field card AddonBeastCard
 ---@field chosen number? the beast whose card shows
 
@@ -1028,21 +1031,15 @@
 ---@field label FontString
 ---@field map number?
 
----A column head of the Beasts tab that sorts the list.
----@class AddonSortHead: AddonTextButton
----@field arrow Texture up or down, on the head the list is sorted by
-
----@class AddonBeastRow: Button
----@field stripe Texture every other row
+---The Beast column's cell in the Beasts tab's grid.
+---@class AddonBeastNameCell: Frame
 ---@field icon Texture the first rank it teaches that the hunter lacks, else its first
----@field name FontString
----@field family FontString
----@field level FontString
----@field teaches FontString its ranks, coloured by standing
----@field speed FontString its attack speed when not 2.0
----@field distance FontString yards in a straight line, "" where it cannot be placed
+---@field label FontString its name, marked when rare
+
+---The Distance column's cell in the Beasts tab's grid.
+---@class AddonBeastDistanceCell: Frame
+---@field label FontString yards in a straight line, "" where it cannot be placed
 ---@field go Button shows the way there
----@field npc number?
 
 ---A scrollbar beside a list of rows (Core\Widgets.lua).
 ---@class AddonScrollBar: Slider

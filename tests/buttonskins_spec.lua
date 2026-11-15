@@ -186,6 +186,13 @@ describe("button skins", function()
             assert.are.equal("Default", panel.pickers.zone.template)
             assert.are.equal("Default", panel.reach.box.template)
             assert.are.equal("Default", panel.rares.box.template)
+            assert.are.equal("editbox", panel.filterBox.edit.elvSkinned, "the filter box's text box")
+            assert.are.equal("button", panel.filterBox.apply.elvSkinned)
+            local open = panel.filterBox.open
+            open:GetScript("OnClick")(open, "LeftButton")
+            local builder = panel.filterBox.builder
+            assert.is_not_nil(builder.template, "the Builder in the window's own style")
+            assert.are.equal("Default", builder.lines[1].join.template, "its chips as fields")
         end)
 
         it("leave those as the game draws them without ElvUI", function()

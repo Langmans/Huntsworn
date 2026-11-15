@@ -71,6 +71,11 @@ externals:
   Libs/LibGoThere-1.0:
     url: https://github.com/Langmans/LibGoThere-1.0.git
     commit: 510d0318645d1a2ce01d159c761d3b5da9567d53
+  # The Beasts tab's filter box, Builder and grid, Huntsworn's own
+  # (github.com/Langmans/LibDataGrid-1.0, MIT); pinned to a commit.
+  Libs/LibDataGrid-1.0:
+    url: https://github.com/Langmans/LibDataGrid-1.0.git
+    commit: 7a8da13056921d492670bd22cfd6048936e16e52
   # The world map button's place: one row with Blizzard's and other addons' map buttons
   # (MapNotes, RareScanner, Questie use it too); github.com/TheKrowi/Krowi_WorldMapButtons,
   # BSD-3-Clause, pinned to the commit of its tag 1.4.12.

@@ -1,30 +1,32 @@
 local _, ns = ...
 
 -- The Beasts tab of Huntsworn's window (Core\Window.lua): every beast that teaches a pet ability
--- rank, like Wowhead's hunter pets tool but measured against this hunter. By level, then name, or
--- with a click on the Distance head nearest first in a straight line (those it cannot place last,
--- by level). Each with its family, levels, the ranks it teaches coloured by how the hunter stands
--- to each (new green, skipped yellow, known grey, as on the beast's tooltip), the yards to it, its
--- attack speed when not 2.0, and a button that shows the way there. The sort and the filters are
--- kept in the profile. Filters on top: a name search, ability,
+-- rank, like Wowhead's hunter pets tool but measured against this hunter. Each with its family,
+-- levels, the ranks it teaches coloured by how the hunter stands to each (new green, skipped
+-- yellow, known grey, as on the beast's tooltip), the yards to it in a straight line with a button
+-- that shows the way there, and its attack speed when not 2.0.
+--
+-- Two kinds of filter, both kept in the profile. On top, quick ones: a name search, ability,
 -- family, diet, zone (all, the player's own, one), whether the hunter has every rank already or not
--- yet, in reach (at most the hunter's level), rares only. A click on a row opens the beast's card
+-- yet, in reach (at most the hunter's level), rares only. Under them, filter text and its Builder
+-- (LibDataGrid-1.0), which filter what the quick ones let through: `[Level] BETWEEN 10 AND 20 AND
+-- [Speed] < 2`. The list is LibDataGrid's grid: a click on a head sorts by it (up, down, off), Ctrl
+-- adds a second column; unsorted, by level then name. A click on a row opens the beast's card
 -- (BeastCard.lua) in the list's place.
 
 ---@type Addon
 local Addon = ns
 local L = Addon.L
 local M = Addon:GetModule("BeastMap") --[[@as AddonBeastMap]]
+local DG = LibStub("LibDataGrid-1.0") --[[@as LibDataGrid]]
+local T = DG.types
 
-local LINE_HEIGHT, ROW_HEIGHT, LIST_TOP, ROWS = 24, 18, 68, 18
-local ICON_X, NAME_X, FAMILY_X, LEVEL_X, TEACHES_X = 2, 22, 178, 272, 322
-local SPEED_WIDTH, DISTANCE_WIDTH, SEARCH_WIDTH = 34, 56, 140
+local LINE_HEIGHT, ROW_HEIGHT, SEARCH_WIDTH = 24, 18, 140
+-- Where the filter box and the grid start, and the grid's height: its header and 15 rows.
+local BOX_TOP, GRID_TOP, GRID_HEIGHT = 48, 88, 20 + 15 * ROW_HEIGHT
 local GO_ICON = "Interface\\Icons\\INV_Misc_Map_01"
 local CHECK_BOX, CHECK_MARK = "Interface\\Buttons\\UI-CheckBox-Up", "Interface\\Buttons\\UI-CheckBox-Check"
-local GOLD, DIM, WHITE = { 1, 0.82, 0 }, { 0.6, 0.6, 0.6 }, { 1, 1, 1 }
--- The list's orders, chosen by a click on a column head.
-local SORTS = { name = "name", family = "family", level = "level", distance = "distance", speed = "speed" }
-local ARROW_UP, ARROW_DOWN = "Interface\\Buttons\\Arrow-Up-Up", "Interface\\Buttons\\Arrow-Down-Up"
+local DIM = { 0.6, 0.6, 0.6 }
 local QUESTION_MARK = 134400
 -- A rank's colour code in the Teaches column, by how the hunter stands to it (M.Lacking).
 local STANDING = { above = "ff00ff00", gap = "ffffff00", known = "ff808080" }
@@ -35,15 +37,25 @@ local ALL = "all"
 local ZONE_HERE = "here"
 -- The You filter's choices.
 local YOU = { all = ALL, has = "has", lacks = "lacks" }
+-- The grid's columns, by key (the names filter text also takes).
+local COLUMNS = {
+    name = "name",
+    family = "family",
+    level = "level",
+    teaches = "teaches",
+    distance = "distance",
+    speed = "speed",
+    rare = "rare",
+}
 ---@type number[]
 local NONE = {}
 
 -- The choices of the Ability, Family, Diet and Zone pickers apart from ALL and ZONE_HERE, in
--- order; built the first time from the data.
----@type number[], number[], string[], number[]
-local abilities, families, diets, zones
--- The beasts that pass the filters in list order, and every teaching beast's name; refilled for
--- each look. The ranks named in a row's Teaches column, refilled for each row.
+-- order; built the first time from the data. The Family column's choices, from the same families.
+---@type number[], number[], string[], number[], LibDataGridChoice[]
+local abilities, families, diets, zones, familyChoices
+-- The beasts that pass the quick filters, by level then name, and every teaching beast's name;
+-- refilled for each look. The ranks named in a Teaches cell, refilled for each cell.
 ---@type number[], table<number, string>, string[]
 local shown, names, parts = {}, {}, {}
 -- The yards to each beast shown, worked out once per look (BeastMap.lua's YardsTo).
@@ -101,7 +113,7 @@ end
 ---those eat, the maps and instances beasts live in that the client can name; each by name.
 local function Choices()
     if zones then return end
-    abilities, families, diets, zones = {}, {}, {}, {}
+    abilities, families, diets, zones, familyChoices = {}, {}, {}, {}, {}
     ---@type table<string|number, true>, table<string|number, true>, table<string|number, true>, table<string|number, true>
     local seenAbility, seenFamily, seenDiet, seenZone = {}, {}, {}, {}
     for _, rank in pairs(Addon.data.petAbilityRanks) do
@@ -130,6 +142,11 @@ local function Choices()
     table.sort(families, ByFamilyName)
     table.sort(diets, ByFoodName)
     table.sort(zones, ByZoneName)
+    for index, familyID in
+        ipairs(families --[[@as number[] ]])
+    do
+        familyChoices[index] = { value = familyID, text = Addon.FamilyName(familyID) or "?" }
+    end
 end
 
 ---The tab's filters in the profile.
@@ -157,8 +174,8 @@ local function LivesIn(beast, zone)
     return beast.pins ~= nil and beast.pins[zone] ~= nil
 end
 
----Whether a beast passes the filters. With an ability chosen, only that ability's ranks count for
----the You filter.
+---Whether a beast passes the quick filters. With an ability chosen, only that ability's ranks count
+---for the You filter.
 ---@param npc number
 ---@param beast AddonBeast
 ---@param filter AddonBeastsFilter
@@ -206,54 +223,13 @@ local function ByLevel(a, b)
     return a < b
 end
 
----A beast's value in the column the list is sorted by.
----@type table<string, fun(npc: number): string|number>
-local SORT_KEYS = {
-    [SORTS.name] = function(npc)
-        return names[npc]
-    end,
-    [SORTS.family] = function(npc)
-        return Addon.FamilyName(Addon.data.beasts[npc].family) or ""
-    end,
-    [SORTS.level] = function(npc)
-        return Addon.data.beasts[npc].minLevel
-    end,
-    [SORTS.distance] = function(npc)
-        return yards[npc]
-    end,
-    -- Without a speed in the data a beast attacks at the usual 2.0.
-    [SORTS.speed] = function(npc)
-        return M.AttackSpeed(npc) or 2
-    end,
-}
--- Each shown beast's value in the sorted column, and the direction; set before each sort.
----@type table<number, string|number>
-local sortKey = {}
-local descending = false
-
----Two beasts in the sorted column's order, either way round; ties by level. A beast it cannot
----place (a huge distance) comes last both ways.
----@param a number
----@param b number
----@return boolean
-local function BySortKey(a, b)
-    local ka, kb = sortKey[a], sortKey[b]
-    if ka == kb then return ByLevel(a, b) end
-    if ka == math.huge or kb == math.huge then return kb == math.huge end
-    -- One column's values are all strings or all numbers.
-    local first = ka --[[@as number]]
-    local second = kb --[[@as number]]
-    if descending then return first > second end
-    return first < second
-end
-
----The beasts that pass the filters, in the order chosen, with the yards to each in `yards`.
+---The beasts that pass the quick filters, by level then name, with the yards to each in `yards`.
+---The grid filters and sorts them further.
 ---@param filter AddonBeastsFilter
 ---@return number[]
 local function Matching(filter)
     wipe(shown)
     wipe(yards)
-    wipe(sortKey)
     local search, here = filter.search:lower(), C_Map.GetBestMapForUnit("player")
     for npc, beast in
         pairs(Addon.data.beasts --[[@as table<number, AddonBeast>]])
@@ -264,13 +240,7 @@ local function Matching(filter)
             yards[npc] = M.YardsTo(npc)
         end
     end
-    ---@type fun(npc: number): string|number
-    local Key = SORT_KEYS[filter.sort] or SORT_KEYS[SORTS.level]
-    for _, npc in ipairs(shown) do
-        sortKey[npc] = Key(npc)
-    end
-    descending = filter.descending
-    table.sort(shown, BySortKey)
+    table.sort(shown, ByLevel)
     return shown
 end
 
@@ -287,10 +257,270 @@ local function Text(parent, skin, justify)
     return text
 end
 
----A filter changed: back to the top of the list.
+---A rank in the colour of how the hunter stands to it.
+---@param spellID number
+---@return string
+local function Coloured(spellID)
+    return ("|c%s%s|r"):format(STANDING[M.Lacking(spellID) or "known"], M.RankText(spellID) or "?")
+end
+-- For the beast's card (BeastCard.lua).
+M.StandingText = Coloured
+
+---"5" or "5-6".
+---@param beast AddonBeast
+---@return string
+local function Levels(beast)
+    if beast.minLevel == beast.maxLevel then return tostring(beast.minLevel) end
+    return ("%d-%d"):format(beast.minLevel, beast.maxLevel)
+end
+
+---The ranks a beast teaches, coloured by standing or plain (what filter text searches), with ", ".
+---@param npc number
+---@param colour boolean
+---@return string
+local function TeachesText(npc, colour)
+    wipe(parts)
+    for _, spellID in
+        ipairs(M.TeachesOf(npc) or NONE --[[@as number[] ]])
+    do
+        parts[#parts + 1] = colour and Coloured(spellID) or (M.RankText(spellID) or "?")
+    end
+    return table.concat(parts, ", ")
+end
+
+---The tooltip of a row's map button.
+---@param go Button
+local function OnGoEnter(go)
+    local line = (go:GetParent() --[[@as Frame]]):GetParent() --[[@as LibDataGridGridLine]]
+    GameTooltip:SetOwner(go, "ANCHOR_RIGHT")
+    GameTooltip:SetText(L.BEASTS_GO:format(names[
+        line.row --[[@as number]]
+    ]))
+    GameTooltip:Show()
+end
+
+local function OnGoLeave()
+    GameTooltip:Hide()
+end
+
+---@param go Button
+local function OnGoClick(go)
+    local line = (go:GetParent() --[[@as Frame]]):GetParent() --[[@as LibDataGridGridLine]]
+    M:GoToBeast(line.row --[[@as number]])
+end
+
+---The Beast column's cells: the icon of the first rank the beast teaches that the hunter lacks
+---(else its first), then its name, marked when rare.
+---@param skin AddonButtonHolderSkin
+---@return LibDataGridRenderer
+local function NameCells(skin)
+    ---@type LibDataGridRenderer
+    local renderer = {}
+
+    ---@param line Button
+    ---@return Region
+    function renderer:Create(line)
+        local cell = CreateFrame("Frame", nil, line) --[[@as AddonBeastNameCell]]
+        cell:SetHeight(ROW_HEIGHT)
+        cell.icon = cell:CreateTexture(nil, "ARTWORK")
+        cell.icon:SetSize(ROW_HEIGHT - 2, ROW_HEIGHT - 2)
+        cell.icon:SetPoint("LEFT", 2, 0)
+        Addon:CropIcon(cell.icon, skin.CropIcon)
+        cell.label = Text(cell, skin)
+        cell.label:SetPoint("LEFT", cell.icon, "RIGHT", 4, 0)
+        cell.label:SetPoint("RIGHT", -4, 0)
+        return cell
+    end
+
+    ---@param region Region
+    ---@param row LibDataGridRow
+    function renderer:Fill(region, row)
+        local cell = region --[[@as AddonBeastNameCell]]
+        local npc = row --[[@as number]]
+        ---@type number[]
+        local spells = M.TeachesOf(npc) or NONE
+        ---@type number?
+        local first
+        for _, spellID in ipairs(spells) do
+            if not first and M.Lacking(spellID) then first = spellID end
+        end
+        local _, icon = Addon.SpellInfo(first or spells[1])
+        cell.icon:SetTexture(icon or QUESTION_MARK)
+        local beast = Addon.data.beasts[npc] --[[@as AddonBeast]]
+        cell.label:SetText(beast.rare and L.BEASTS_RARE_NAME:format(names[npc]) or names[npc])
+    end
+
+    return renderer
+end
+
+---The Distance column's cells: the yards, and the button that shows the way, for a beast out in
+---the open.
+---@param skin AddonButtonHolderSkin
+---@return LibDataGridRenderer
+local function DistanceCells(skin)
+    ---@type LibDataGridRenderer
+    local renderer = {}
+
+    ---@param line Button
+    ---@return Region
+    function renderer:Create(line)
+        local cell = CreateFrame("Frame", nil, line) --[[@as AddonBeastDistanceCell]]
+        cell:SetHeight(ROW_HEIGHT)
+        cell.go = CreateFrame("Button", nil, cell)
+        cell.go:SetSize(ROW_HEIGHT - 2, ROW_HEIGHT - 2)
+        cell.go:SetPoint("RIGHT", -2, 0)
+        cell.go:SetNormalTexture(GO_ICON)
+        cell.go:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
+        cell.go:SetScript("OnClick", OnGoClick)
+        cell.go:SetScript("OnEnter", OnGoEnter)
+        cell.go:SetScript("OnLeave", OnGoLeave)
+        cell.label = Text(cell, skin, "RIGHT")
+        cell.label:SetPoint("LEFT", 2, 0)
+        cell.label:SetPoint("RIGHT", cell.go, "LEFT", -4, 0)
+        return cell
+    end
+
+    ---@param region Region
+    ---@param row LibDataGridRow
+    function renderer:Fill(region, row)
+        local cell = region --[[@as AddonBeastDistanceCell]]
+        local npc = row --[[@as number]]
+        local distance = yards[npc]
+        cell.label:SetText(distance ~= math.huge and L.BEASTS_YARDS:format(math.floor(distance + 0.5)) or "")
+        cell.go:SetShown(Addon.data.beasts[npc].pins ~= nil)
+    end
+
+    return renderer
+end
+
+---The beasts' columns, for the grid and filter text.
+---@param skin AddonButtonHolderSkin
+---@return LibDataGridSchema
+local function Schema(skin)
+    local beasts = Addon.data.beasts
+    return DG:NewSchema({
+        {
+            key = COLUMNS.name,
+            label = L.BEASTS_COLUMN_BEAST,
+            value = function(npc)
+                return names[npc]
+            end,
+            renderer = NameCells(skin),
+        },
+        {
+            key = COLUMNS.family,
+            label = L.BEASTS_COLUMN_FAMILY,
+            type = T.enum,
+            value = function(npc)
+                return beasts[npc].family
+            end,
+            choices = function()
+                Choices()
+                return familyChoices
+            end,
+        },
+        {
+            key = COLUMNS.level,
+            label = L.BEASTS_COLUMN_LEVEL,
+            type = T.number,
+            value = function(npc)
+                return beasts[npc].minLevel
+            end,
+            text = function(npc)
+                return Levels(beasts[npc])
+            end,
+        },
+        {
+            key = COLUMNS.teaches,
+            label = L.BEASTS_COLUMN_TEACHES,
+            value = function(npc)
+                return TeachesText(npc, false)
+            end,
+            text = function(npc)
+                return TeachesText(npc, true)
+            end,
+        },
+        {
+            key = COLUMNS.distance,
+            label = L.BEASTS_COLUMN_DISTANCE,
+            type = T.number,
+            align = DG.aligns.right,
+            -- Those it cannot place have no distance, so they sort last either way.
+            value = function(npc)
+                local distance = yards[npc]
+                return distance ~= math.huge and distance or nil
+            end,
+            renderer = DistanceCells(skin),
+        },
+        {
+            key = COLUMNS.speed,
+            label = L.BEASTS_COLUMN_SPEED,
+            type = T.number,
+            align = DG.aligns.right,
+            -- Without a speed in the data a beast attacks at the usual 2.0, which the cell leaves out.
+            value = function(npc)
+                return M.AttackSpeed(npc) or 2
+            end,
+            text = function(npc)
+                local speed = M.AttackSpeed(npc)
+                return speed and ("%.1f"):format(speed) or ""
+            end,
+        },
+        {
+            key = COLUMNS.rare,
+            label = L.BEASTS_COLUMN_RARE,
+            type = T.boolean,
+            value = function(npc)
+                return beasts[npc].rare == true
+            end,
+        },
+    })
+end
+
+---LibDataGrid's skin in Huntsworn's: the panel style, fonts, buttons, boxes and fields.
+---@param skin AddonButtonHolderSkin
+---@return LibDataGridSkinMixin
+local function GridSkin(skin)
+    ---@type LibDataGridSkinMixin
+    local own = CreateFromMixins(DG.SkinMixin)
+
+    ---@param frame Frame
+    function own:Backdrop(frame)
+        skin.Style(frame)
+    end
+
+    ---@param text FontString
+    function own:Font(text)
+        skin.Font(text, 12)
+    end
+
+    -- Where the skin has no look of its own for one, LibDataGrid's plain one stays.
+    local Button, EditBox, Field = skin.Button, skin.EditBox, skin.Field
+    if Button then
+        ---@param button Button
+        function own:Button(button)
+            Button(button)
+        end
+    end
+    if EditBox then
+        ---@param box EditBox
+        function own:EditBox(box)
+            EditBox(box)
+        end
+    end
+    if Field then
+        ---@param frame Frame
+        function own:Field(frame)
+            Field(frame)
+        end
+    end
+    return own
+end
+
+---A quick filter changed: back to the top of the list.
 ---@param panel AddonBeastsPanel
 local function Changed(panel)
-    panel.bar.offset = 0
+    panel.grid.bar.offset = 0
     Addon:RefreshWindow("beasts")
 end
 
@@ -327,7 +557,7 @@ local function Switch(panel, skin, label, key)
     return button
 end
 
----A picker for one filter.
+---A picker for one quick filter.
 ---@param panel AddonBeastsPanel
 ---@param skin AddonButtonHolderSkin
 ---@param width number
@@ -368,135 +598,16 @@ local function SearchBox(panel, skin)
     return box
 end
 
----The tooltip of a row's map button.
----@param go Button
-local function OnGoEnter(go)
-    local row = go:GetParent() --[[@as AddonBeastRow]]
-    GameTooltip:SetOwner(go, "ANCHOR_RIGHT")
-    GameTooltip:SetText(L.BEASTS_GO:format(names[row.npc]))
-    GameTooltip:Show()
-end
-
-local function OnGoLeave()
-    GameTooltip:Hide()
-end
-
----A row of the list: icon, name, family, levels, what it teaches, speed, the map button.
+---The filter text and the sort changed: kept in the profile, and the count follows.
 ---@param panel AddonBeastsPanel
----@param skin AddonButtonHolderSkin
----@param index number
----@return AddonBeastRow
-local function Row(panel, skin, index)
-    local row = CreateFrame("Button", nil, panel.list) --[[@as AddonBeastRow]]
-    row:SetHeight(ROW_HEIGHT)
-    row:SetPoint("TOPLEFT", 0, -(index - 1) * ROW_HEIGHT)
-    row:SetPoint("RIGHT")
-    row.stripe = row:CreateTexture(nil, "BACKGROUND")
-    row.stripe:SetAllPoints()
-    row.stripe:SetColorTexture(1, 1, 1, 0.05)
-    row.stripe:SetShown(index % 2 == 0)
-    row.icon = row:CreateTexture(nil, "ARTWORK")
-    row.icon:SetSize(ROW_HEIGHT - 2, ROW_HEIGHT - 2)
-    row.icon:SetPoint("LEFT", ICON_X, 0)
-    Addon:CropIcon(row.icon, skin.CropIcon)
-    row.name = Text(row, skin)
-    row.name:SetPoint("LEFT", NAME_X, 0)
-    row.name:SetWidth(FAMILY_X - NAME_X - 4)
-    row.family = Text(row, skin)
-    row.family:SetPoint("LEFT", FAMILY_X, 0)
-    row.family:SetWidth(LEVEL_X - FAMILY_X - 4)
-    row.level = Text(row, skin)
-    row.level:SetPoint("LEFT", LEVEL_X, 0)
-    row.level:SetWidth(TEACHES_X - LEVEL_X - 4)
-    row.go = CreateFrame("Button", nil, row)
-    row.go:SetSize(ROW_HEIGHT - 2, ROW_HEIGHT - 2)
-    row.go:SetPoint("RIGHT", -2, 0)
-    row.go:SetNormalTexture(GO_ICON)
-    row.go:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
-    row.go:SetScript("OnClick", function()
-        M:GoToBeast(row.npc --[[@as number]])
-    end)
-    row.go:SetScript("OnEnter", OnGoEnter)
-    row.go:SetScript("OnLeave", OnGoLeave)
-    row.speed = Text(row, skin, "RIGHT")
-    row.speed:SetWidth(SPEED_WIDTH)
-    row.speed:SetPoint("RIGHT", row.go, "LEFT", -6, 0)
-    row.distance = Text(row, skin, "RIGHT")
-    row.distance:SetWidth(DISTANCE_WIDTH)
-    row.distance:SetPoint("RIGHT", row.speed, "LEFT", -4, 0)
-    row.teaches = Text(row, skin)
-    row.teaches:SetPoint("LEFT", TEACHES_X, 0)
-    row.teaches:SetPoint("RIGHT", row.distance, "LEFT", -4, 0)
-    row:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight", "ADD")
-    row:SetScript("OnClick", function()
-        panel.chosen = row.npc
-        Addon:RefreshWindow("beasts")
-    end)
-    return row
+local function OnGridChanged(panel)
+    local settings = Filter().grid
+    settings.filter, settings.sort = panel.view:GetFilterModel(), panel.view:GetSort()
+    Addon:RefreshWindow("beasts")
 end
 
----The column heads above the rows, in gold. Each but Teaches sorts the list; a second click on the
----same head turns the order round. The head it is sorted by is white, with an arrow for the
----direction.
----@param panel AddonBeastsPanel
----@param skin AddonButtonHolderSkin
-local function Heads(panel, skin)
-    ---@param x number from the list's left, or with `right` its right
-    ---@param label string
-    ---@param right boolean?
-    ---@param parent Frame?
-    ---@return FontString
-    local function Head(x, label, right, parent)
-        local text = Text(parent or panel.browse, skin, right and "RIGHT" or nil)
-        if right then
-            text:SetPoint("TOPRIGHT", panel.list, "TOPRIGHT", x, ROW_HEIGHT)
-        else
-            text:SetPoint("TOPLEFT", panel.list, "TOPLEFT", x, ROW_HEIGHT)
-        end
-        text:SetText(label)
-        text:SetTextColor(GOLD[1], GOLD[2], GOLD[3])
-        return text
-    end
-    ---@param x number
-    ---@param label string
-    ---@param value string
-    ---@param right boolean?
-    ---@return AddonSortHead
-    local function SortHead(x, label, value, right)
-        local head = CreateFrame("Button", nil, panel.browse) --[[@as AddonSortHead]]
-        head.label, head.value = Head(x, label, right, head), value
-        head:SetAllPoints(head.label)
-        head.arrow = head:CreateTexture(nil, "OVERLAY")
-        head.arrow:SetSize(12, 12)
-        -- Beside the text: after a left-aligned one, before a right-aligned one.
-        if right then
-            head.arrow:SetPoint("RIGHT", head.label, "LEFT", -2, 0)
-        else
-            head.arrow:SetPoint("LEFT", head.label, "RIGHT", 2, 0)
-        end
-        -- A click sorts the list by this head, or the other way round when it is already; kept in
-        -- the profile.
-        head:SetScript("OnClick", function()
-            local filter = Filter()
-            filter.descending = filter.sort == value and not filter.descending
-            filter.sort = value --[[@as "name"|"family"|"level"|"distance"|"speed"]]
-            Changed(panel)
-        end)
-        return head
-    end
-    local speedRight = -ROW_HEIGHT - 8
-    Head(TEACHES_X, L.BEASTS_COLUMN_TEACHES)
-    panel.sorts = {
-        name = SortHead(NAME_X, L.BEASTS_COLUMN_BEAST, SORTS.name),
-        family = SortHead(FAMILY_X, L.BEASTS_COLUMN_FAMILY, SORTS.family),
-        level = SortHead(LEVEL_X, L.BEASTS_COLUMN_LEVEL, SORTS.level),
-        distance = SortHead(speedRight - SPEED_WIDTH - 4, L.BEASTS_COLUMN_DISTANCE, SORTS.distance, true),
-        speed = SortHead(speedRight, L.BEASTS_COLUMN_SPEED, SORTS.speed, true),
-    }
-end
-
----Builds the panel: in `browse` two lines of filters, the count, the column heads, the rows and
----their bar; beside it the beast's card, which takes its place.
+---Builds the panel: in `browse` two lines of quick filters and the count, the filter box, and the
+---grid; beside it the beast's card, which takes its place.
 ---@param panel AddonBeastsPanel
 ---@param skin AddonButtonHolderSkin
 local function Create(panel, skin)
@@ -524,63 +635,34 @@ local function Create(panel, skin)
     panel.count = Text(panel.browse, skin, "RIGHT")
     panel.count:SetPoint("TOPRIGHT", 0, -LINE_HEIGHT - 4)
     panel.count:SetTextColor(DIM[1], DIM[2], DIM[3])
-    panel.list = CreateFrame("Frame", nil, panel.browse)
-    panel.list:SetPoint("TOPLEFT", 0, -LIST_TOP)
-    panel.list:SetPoint("BOTTOMRIGHT", -16, 0)
-    panel.bar = Addon.ScrollBar(panel.list, function()
+
+    local gridSkin, settings = GridSkin(skin), Filter().grid
+    panel.view = Schema(skin):NewView()
+    panel.view:SetFilterModel(settings.filter)
+    panel.view:SetSort(settings.sort)
+    panel.filterBox = DG:CreateFilterBox(panel.browse, panel.view, gridSkin)
+    panel.filterBox:SetPoint("TOPLEFT", 0, -BOX_TOP)
+    panel.filterBox:SetPoint("TOPRIGHT", 0, -BOX_TOP)
+    ---A click on a row opens the beast's card.
+    ---@type table
+    local opensCard = {}
+    ---@param row LibDataGridRow
+    function opensCard:OnRowClick(row)
+        panel.chosen = row --[[@as number]]
         Addon:RefreshWindow("beasts")
-    end)
-    Heads(panel, skin)
-    panel.rows = {}
-    for index = 1, ROWS do
-        panel.rows[index] = Row(panel, skin, index)
     end
-end
-
----A rank in the colour of how the hunter stands to it.
----@param spellID number
----@return string
-local function Coloured(spellID)
-    return ("|c%s%s|r"):format(STANDING[M.Lacking(spellID) or "known"], M.RankText(spellID) or "?")
-end
--- For the beast's card (BeastCard.lua).
-M.StandingText = Coloured
-
----"5" or "5-6".
----@param beast AddonBeast
----@return string
-local function Levels(beast)
-    if beast.minLevel == beast.maxLevel then return tostring(beast.minLevel) end
-    return ("%d-%d"):format(beast.minLevel, beast.maxLevel)
-end
-
----Fills a row with a beast.
----@param row AddonBeastRow
----@param npc number
-local function FillRow(row, npc)
-    local beast = Addon.data.beasts[npc] --[[@as AddonBeast]]
-    ---@type number[]
-    local spells = M.TeachesOf(npc) or NONE
-    row.npc = npc
-    row.name:SetText(beast.rare and L.BEASTS_RARE_NAME:format(names[npc]) or names[npc])
-    row.family:SetText(Addon.FamilyName(beast.family) or "?")
-    row.level:SetText(Levels(beast))
-    wipe(parts)
-    ---@type number?
-    local first
-    for _, spellID in ipairs(spells) do
-        parts[#parts + 1] = Coloured(spellID)
-        if not first and M.Lacking(spellID) then first = spellID end
+    panel.grid = DG:CreateGrid(panel.browse, panel.view, gridSkin, opensCard)
+    panel.grid:SetPoint("TOPLEFT", 0, -GRID_TOP)
+    panel.grid:SetSize(Addon.WINDOW_PANEL_WIDTH, GRID_HEIGHT)
+    panel.grid:AddFixedWidthColumn(COLUMNS.name, 176)
+    panel.grid:AddFixedWidthColumn(COLUMNS.family, 94)
+    panel.grid:AddFixedWidthColumn(COLUMNS.level, 50)
+    panel.grid:AddFillColumn(COLUMNS.teaches)
+    panel.grid:AddFixedWidthColumn(COLUMNS.distance, 84)
+    panel.grid:AddFixedWidthColumn(COLUMNS.speed, 44)
+    for _, event in pairs(DG.events) do
+        panel.view:RegisterCallback(event, OnGridChanged, panel)
     end
-    row.teaches:SetText(table.concat(parts, ", "))
-    local _, icon = Addon.SpellInfo(first or spells[1])
-    row.icon:SetTexture(icon or QUESTION_MARK)
-    local speed = M.AttackSpeed(npc)
-    row.speed:SetText(speed and ("%.1f"):format(speed) or "")
-    local distance = yards[npc]
-    row.distance:SetText(distance ~= math.huge and L.BEASTS_YARDS:format(math.floor(distance + 0.5)) or "")
-    row.go:SetShown(beast.pins ~= nil)
-    row:Show()
 end
 
 ---Refills a picker's choices: ALL first with its text, then `values` named by `Name`. Returns the
@@ -617,7 +699,7 @@ local function FamilyText(familyID)
     return Addon.FamilyName(familyID)
 end
 
----Fills the pickers and switches from the filters.
+---Fills the pickers and switches from the quick filters.
 ---@param panel AddonBeastsPanel
 ---@param filter AddonBeastsFilter
 local function FillFilters(panel, filter)
@@ -636,18 +718,11 @@ local function FillFilters(panel, filter)
     filter.zone = Addon.FillPicker(zone, filter.zone)
     panel.reach.check:SetShown(filter.reach)
     panel.rares.check:SetShown(filter.rares)
-    for value, head in pairs(panel.sorts) do
-        local sorted = value == filter.sort
-        local colour = sorted and WHITE or GOLD
-        head.label:SetTextColor(colour[1], colour[2], colour[3])
-        head.arrow:SetShown(sorted)
-        head.arrow:SetTexture(filter.descending and ARROW_DOWN or ARROW_UP)
-    end
     if panel.search:GetText() ~= filter.search then panel.search:SetText(filter.search) end
     panel.hint:SetShown(filter.search == "")
 end
 
----Fills the chosen beast's card, or else the filters, the count and the rows.
+---Fills the chosen beast's card, or else the quick filters, the grid and the count.
 ---@param panel AddonBeastsPanel
 local function Refresh(panel)
     local chosen = panel.chosen and Addon.data.beasts[panel.chosen] and panel.chosen
@@ -659,17 +734,9 @@ local function Refresh(panel)
     end
     local filter = Filter()
     FillFilters(panel, filter)
-    local list = Matching(filter)
-    panel.count:SetText(#list == 0 and L.BEASTS_NONE or L.BEASTS_COUNT:format(#list))
-    panel.bar:SetRange(#list, ROWS)
-    for index, row in ipairs(panel.rows) do
-        local npc = list[index + panel.bar.offset]
-        if npc then
-            FillRow(row, npc)
-        else
-            row:Hide()
-        end
-    end
+    panel.grid:SetRows(Matching(filter))
+    local count = panel.grid.count
+    panel.count:SetText(count == 0 and L.BEASTS_NONE or L.BEASTS_COUNT:format(count))
 end
 
 Addon:RegisterWindowTab({

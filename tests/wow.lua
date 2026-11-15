@@ -1167,6 +1167,22 @@ function NewClient(opts)
         return tbl
     end
     table.wipe = wipe
+    -- Whether Ctrl is held: client.ctrlDown, for a Ctrl-click.
+    function IsControlKeyDown()
+        return client.ctrlDown == true
+    end
+    -- Blizzard_SharedXMLBase/Mixin.lua, on every client: LibDataGrid builds on them.
+    function Mixin(object, ...)
+        for i = 1, select("#", ...) do
+            for key, value in pairs((select(i, ...))) do
+                object[key] = value
+            end
+        end
+        return object
+    end
+    function CreateFromMixins(...)
+        return Mixin({}, ...)
+    end
     function tContains(tbl, value)
         for _, v in ipairs(tbl) do
             if v == value then return true end
@@ -1306,6 +1322,21 @@ function NewClient(opts)
     -- A backdrop (BackdropTemplateMixin's), as set.
     function Region:SetBackdrop(backdrop)
         self.backdrop = backdrop
+    end
+    -- An edit box's focus: gaining or losing it fires OnEditFocusGained / OnEditFocusLost, as on
+    -- the client (LibDataGrid's filter box takes typing only while it has focus).
+    function Region:SetFocus()
+        if self.focus then return end
+        self.focus = true
+        if self.scripts.OnEditFocusGained then self.scripts.OnEditFocusGained(self) end
+    end
+    function Region:ClearFocus()
+        if not self.focus then return end
+        self.focus = false
+        if self.scripts.OnEditFocusLost then self.scripts.OnEditFocusLost(self) end
+    end
+    function Region:HasFocus()
+        return self.focus == true
     end
     function Region:SetTextColor(r, g, b)
         self.textColor = { r, g, b }

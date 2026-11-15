@@ -52,10 +52,10 @@ M.defaults = {
             diet = "all",
             zone = "all",
             you = "all",
-            sort = "level",
-            descending = false,
             reach = false,
             rares = false,
+            -- The grid's filter text as a tree, and its sort (LibDataGrid's GetFilterModel, GetSort).
+            grid = { sort = {} },
         },
     },
 }

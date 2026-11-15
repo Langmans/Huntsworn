@@ -224,6 +224,8 @@ L.BEASTS_COLUMN_TEACHES = "Teaches"
 L.BEASTS_COLUMN_SPEED = "Speed"
 -- The column of how far each beast is in a straight line; a click on it, or on Level, sorts the list by it.
 L.BEASTS_COLUMN_DISTANCE = "Distance"
+-- The column name filter text uses for whether a beast is rare: [Rare] = true. Not shown in the list.
+L.BEASTS_COLUMN_RARE = "Rare"
 -- A beast's distance in that column. %d: yards.
 L.BEASTS_YARDS = "%d yd"
 -- A rare beast's name in the list. %s: the name.

@@ -70,17 +70,48 @@ local function tab(client)
     return client.Addon.window.panels.beasts
 end
 
----The shown rows' texts of one column.
-local function column(panel, field)
+---The cell of the grid's line `index` in the column `key`: a text, or the frame a renderer made.
+local function cellOf(panel, index, key)
+    local grid = panel.grid
+    for i, entry in ipairs(grid.columns) do
+        if entry.column.key == key then return grid.lines[index].cells[i] end
+    end
+    error("no column " .. key)
+end
+
+---A cell's text: its own, or its renderer's label.
+local function textOf(cell)
+    return cell.label and cell.label.text or cell.text
+end
+
+---The shown lines' texts of one column.
+local function column(panel, key)
     local out = {}
-    for _, row in ipairs(panel.rows) do
-        if row.shown then out[#out + 1] = row[field or "name"].text end
+    for index, line in ipairs(panel.grid.lines) do
+        if line.shown then out[#out + 1] = textOf(cellOf(panel, index, key or "name")) end
     end
     return out
 end
 
+---The grid's head of a column.
+local function head(panel, key)
+    for _, button in ipairs(panel.grid.heads) do
+        if button.key == key then return button end
+    end
+    error("no head " .. key)
+end
+
 local function click(button)
     button:GetScript("OnClick")(button, "LeftButton")
+end
+
+---Types filter text into the tab's filter box and presses Enter.
+local function filterText(panel, text)
+    local edit = panel.filterBox.edit
+    edit:SetFocus()
+    edit:SetText(text)
+    edit:GetScript("OnTextChanged")(edit, true)
+    edit:GetScript("OnEnterPressed")(edit)
 end
 
 ---The texts of the open pick list's shown rows.
@@ -123,23 +154,28 @@ describe("the Beasts tab", function()
         local client = hunter(10)
         client:openTrainer({ { "Claw", "used", CLAW_2 } }):closeTrainer()
         local panel = tab(client)
-        local low, spider, rare, high = panel.rows[1], panel.rows[2], panel.rows[3], panel.rows[6]
-        assert.are.equal("|cffffff00Claw (Rank 1)|r, |cff808080Claw (Rank 2)|r", low.teaches.text, "skipped, known")
-        assert.are.equal("|cff00ff00Claw (Rank 3)|r", high.teaches.text, "new")
-        assert.are.equal("|cff00ff00Bite (Rank 1)|r", spider.teaches.text)
-        assert.are.equal("1.2", spider.speed.text)
-        assert.are.equal("", rare.speed.text, "2.0 is the usual")
-        assert.are.equal("", low.speed.text)
-        assert.are.equal(CLAW_ICON, low.icon.texture, "the icon of the first rank it lacks")
-        assert.are.equal(BITE_ICON, spider.icon.texture)
+        local function teaches(index)
+            return cellOf(panel, index, "teaches").text
+        end
+        local function speed(index)
+            return cellOf(panel, index, "speed").text
+        end
+        assert.are.equal("|cffffff00Claw (Rank 1)|r, |cff808080Claw (Rank 2)|r", teaches(1), "skipped, known")
+        assert.are.equal("|cff00ff00Claw (Rank 3)|r", teaches(6), "new")
+        assert.are.equal("|cff00ff00Bite (Rank 1)|r", teaches(2))
+        assert.are.equal("1.2", speed(2))
+        assert.are.equal("", speed(3), "2.0 is the usual")
+        assert.are.equal("", speed(1))
+        assert.are.equal(CLAW_ICON, cellOf(panel, 1, "name").icon.texture, "the icon of the first rank it lacks")
+        assert.are.equal(BITE_ICON, cellOf(panel, 2, "name").icon.texture)
     end)
 
     it("has a go pin on a beast out in the open, which sends the hunter there", function()
         local client = hunter(10)
         local panel = tab(client)
-        assert.is_true(panel.rows[1].go.shown)
-        assert.is_false(panel.rows[4].go.shown, "Cave Boar lives in an instance")
-        local go = panel.rows[1].go
+        assert.is_true(cellOf(panel, 1, "distance").go.shown)
+        assert.is_false(cellOf(panel, 4, "distance").go.shown, "Cave Boar lives in an instance")
+        local go = cellOf(panel, 1, "distance").go
         go:GetScript("OnEnter")(go)
         assert.are.equal("The way to Low Cat", GameTooltip.text)
         go:GetScript("OnLeave")(go)
@@ -239,8 +275,8 @@ describe("the Beasts tab", function()
     it("sorts by straight-line distance with a click on Distance's head, and back by Level's", function()
         local client = hunter(10)
         local panel = tab(client)
-        assert.are.equal("Level", panel.sorts.level.label.text)
-        click(panel.sorts.distance)
+        assert.are.equal("Level", head(panel, "level").label.text)
+        click(head(panel, "distance"))
         -- The player stands in the middle of Elwynn Forest; Tirisfal Glades cannot be placed in
         -- the simulated world, and Cave Boar lives in an instance: those last, by level.
         assert.are.same(
@@ -250,59 +286,115 @@ describe("the Beasts tab", function()
         local yards = column(panel, "distance")
         assert.is_truthy(yards[1]:match("^%d+ yd$"), yards[1])
         assert.are.same({ "", "" }, { yards[5], yards[6] }, "no distance for those")
-        assert.are.same({ 1, 1, 1 }, panel.sorts.distance.label.textColor, "the sort in white")
-        assert.are.same({ 1, 0.82, 0 }, panel.sorts.level.label.textColor, "the other in gold")
-        assert.are.equal("distance", client.Addon:GetModule("BeastMap"):Settings().beasts.sort)
-        click(panel.sorts.level)
+        assert.is_true(head(panel, "distance").arrow.shown, "the arrow on the head it is sorted by")
+        assert.is_false(head(panel, "level").arrow.shown)
+        assert.are.same(
+            { { key = "distance" } },
+            client.Addon:GetModule("BeastMap"):Settings().beasts.grid.sort,
+            "kept in the profile"
+        )
+        click(head(panel, "level"))
         assert.are.equal("Low Cat", column(panel)[1])
         assert.are.equal("Spider", column(panel)[2])
     end)
 
-    it("sorts by any column head; a second click on it turns the order round", function()
+    it("sorts by any column head: up, down, then off, back by level", function()
         local client = hunter(10)
         local panel = tab(client)
-        local sorts, filter = panel.sorts, client.Addon:GetModule("BeastMap"):Settings().beasts
-        click(sorts.speed)
+        local view = panel.view
+        click(head(panel, "speed"))
         assert.are.same(
             { "Spider", "Low Cat", "Rare Cat (rare)", "Cave Boar", "Field Boar", "High Cat" },
             column(panel),
             "1.2 first; the rest attack at 2.0, by level"
         )
-        assert.is_true(sorts.speed.arrow.shown)
-        assert.are.equal("Interface\\Buttons\\Arrow-Up-Up", sorts.speed.arrow.texture)
-        assert.is_false(sorts.level.arrow.shown, "only the head it is sorted by")
-        click(sorts.speed)
-        assert.is_true(filter.descending)
-        assert.are.equal("Interface\\Buttons\\Arrow-Down-Up", sorts.speed.arrow.texture)
+        assert.is_true(head(panel, "speed").arrow.shown)
+        assert.is_false(head(panel, "level").arrow.shown, "only the head it is sorted by")
+        click(head(panel, "speed"))
+        assert.are.same({ { key = "speed", descending = true } }, view:GetSort())
         assert.are.same(
             { "Low Cat", "Rare Cat (rare)", "Cave Boar", "Field Boar", "High Cat", "Spider" },
             column(panel),
             "ties stay by level"
         )
-        click(sorts.name)
-        assert.is_false(filter.descending, "another head starts ascending")
+        click(head(panel, "name"))
+        assert.are.same({ { key = "name" } }, view:GetSort(), "another head starts ascending")
         assert.are.same(
             { "Cave Boar", "Field Boar", "High Cat", "Low Cat", "Rare Cat (rare)", "Spider" },
             column(panel)
         )
-        click(sorts.family)
+        click(head(panel, "family"))
         assert.are.same(
             { "Cave Boar", "Field Boar", "Low Cat", "Rare Cat (rare)", "High Cat", "Spider" },
             column(panel)
         )
-        click(sorts.level)
-        click(sorts.level)
+        click(head(panel, "level"))
+        click(head(panel, "level"))
         assert.are.same(
             { "High Cat", "Cave Boar", "Field Boar", "Rare Cat (rare)", "Low Cat", "Spider" },
             column(panel)
         )
-        click(sorts.distance)
-        click(sorts.distance)
+        click(head(panel, "distance"))
+        click(head(panel, "distance"))
         assert.are.same(
             { "Spider", "Field Boar", "High Cat", "Low Cat", "Rare Cat (rare)", "Cave Boar" },
             column(panel),
             "farthest first; those it cannot place stay last"
         )
+        click(head(panel, "distance"))
+        assert.are.same({}, view:GetSort(), "a third click turns it off")
+        assert.are.same(
+            { "Low Cat", "Spider", "Rare Cat (rare)", "Cave Boar", "Field Boar", "High Cat" },
+            column(panel),
+            "by level again"
+        )
+    end)
+
+    it("sorts by a second column with Ctrl, numbering the heads", function()
+        local client = hunter(10)
+        local panel = tab(client)
+        click(head(panel, "level"))
+        client.ctrlDown = true
+        click(head(panel, "name"))
+        click(head(panel, "name"))
+        client.ctrlDown = false
+        assert.are.same(
+            { "Spider", "Low Cat", "Rare Cat (rare)", "Field Boar", "Cave Boar", "High Cat" },
+            column(panel),
+            "level up, then name down within a level"
+        )
+        assert.are.equal("1", head(panel, "level").order.text)
+        assert.are.equal("2", head(panel, "name").order.text)
+    end)
+
+    it("filters further with filter text, on top of the pick lists", function()
+        local client = hunter(70)
+        local panel = tab(client)
+        pick(client, panel.pickers.family, "Cat")
+        filterText(panel, "[level] > 5")
+        assert.are.same({ "Rare Cat (rare)", "High Cat" }, column(panel))
+        assert.are.equal("2 beasts", panel.count.text)
+        pick(client, panel.pickers.family, "All families")
+        filterText(panel, "[Teaches] CONTAINS bite || [Speed] < 2")
+        assert.are.same({ "Spider" }, column(panel))
+        filterText(panel, "[Rare] = true")
+        assert.are.same({ "Rare Cat (rare)" }, column(panel))
+        filterText(panel, "[Diet] = Meat")
+        assert.is_true(panel.filterBox.hint.shown, "the parser's message")
+        assert.are.same({ "Rare Cat (rare)" }, column(panel), "the filter as it was")
+    end)
+
+    it("keeps the filter text and the sort in the profile", function()
+        local client = hunter(10)
+        local panel = tab(client)
+        filterText(panel, "[Level] BETWEEN 5 AND 12")
+        click(head(panel, "name"))
+        client:logout()
+        client = NewClient({ saved = Saved(), modules = SmallData })
+        client.playerLevel = 10
+        panel = tab(client:login():advance(5))
+        assert.are.equal("[Level] BETWEEN 5 AND 12", panel.filterBox:GetText())
+        assert.are.same({ "Cave Boar", "Field Boar", "Low Cat", "Rare Cat (rare)", "Spider" }, column(panel))
     end)
 
     it("closes a pick list with a second click on its picker", function()
@@ -334,9 +426,9 @@ describe("the Beasts tab", function()
     describe("a beast's card", function()
         ---Opens the card of the beast named `name` in the list.
         local function open(panel, name)
-            for _, row in ipairs(panel.rows) do
-                if row.shown and row.name.text == name then
-                    click(row)
+            for index, line in ipairs(panel.grid.lines) do
+                if line.shown and textOf(cellOf(panel, index, "name")) == name then
+                    click(line)
                     return panel.card
                 end
             end
@@ -486,21 +578,26 @@ describe("the Beasts tab", function()
         it("scrolls with the mouse wheel and the scrollbar beside the rows", function()
             local client = hunter(10, many)
             local panel = tab(client)
+            local grid = panel.grid
+            local function first()
+                return column(panel)[1]
+            end
             assert.are.equal("46 beasts", panel.count.text)
-            assert.is_true(panel.bar.shown)
-            assert.are.equal("Low Cat", panel.rows[1].name.text)
-            panel.list:GetScript("OnMouseWheel")(panel.list, -1)
-            assert.are.equal("Spider", panel.rows[1].name.text)
-            assert.are.equal(1, panel.bar.value, "the bar follows the wheel")
-            panel.bar:GetScript("OnValueChanged")(panel.bar, 3)
-            assert.are.equal("Cave Boar", panel.rows[1].name.text)
-            panel.list:GetScript("OnMouseWheel")(panel.list, 10)
-            assert.are.equal("Low Cat", panel.rows[1].name.text, "not above the top")
-            panel.bar:GetScript("OnValueChanged")(panel.bar, 999)
-            assert.are.equal("High Cat", panel.rows[#panel.rows].name.text, "nor past the end")
+            assert.is_true(grid.bar.shown)
+            assert.are.equal("Low Cat", first())
+            grid.body:GetScript("OnMouseWheel")(grid.body, -1)
+            assert.are.equal("Spider", first())
+            assert.are.equal(1, grid.bar.value, "the bar follows the wheel")
+            grid.bar:GetScript("OnValueChanged")(grid.bar, 3)
+            assert.are.equal("Cave Boar", first())
+            grid.body:GetScript("OnMouseWheel")(grid.body, 10)
+            assert.are.equal("Low Cat", first(), "not above the top")
+            grid.bar:GetScript("OnValueChanged")(grid.bar, 999)
+            local names = column(panel)
+            assert.are.equal("High Cat", names[#names], "nor past the end")
             search(panel, "spider")
-            assert.is_false(panel.bar.shown, "no bar when all fit")
-            assert.are.equal("Spider", panel.rows[1].name.text, "back at the top")
+            assert.is_false(grid.bar.shown, "no bar when all fit")
+            assert.are.equal("Spider", first(), "back at the top")
         end)
 
         it("scrolls a long pick list the same way", function()
@@ -513,6 +610,8 @@ describe("the Beasts tab", function()
             list.inner:GetScript("OnMouseWheel")(list.inner, -2)
             assert.are.equal("Den 01", choices(client)[1])
             assert.are.equal(15, #choices(client))
+            list.bar:GetScript("OnValueChanged")(list.bar, 4)
+            assert.are.equal("Den 03", choices(client)[1], "and with its scrollbar")
         end)
     end)
 end)

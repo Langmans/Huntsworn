@@ -1,7 +1,7 @@
 # Libraries
 
 Ace3, LibSink-2.0, LibDataBroker-1.1, LibDBIcon-1.0, LibAboutPanel-2.0,
-Krowi_WorldMapButtons-1.4, LibGoThere-1.0 and LibTameable-1.0.
+Krowi_WorldMapButtons-1.4, LibGoThere-1.0, LibDataGrid-1.0 and LibTameable-1.0.
 
 Ace3 is not committed. `.pkgmeta` lists each library as an external, pinned
 to a commit of the Ace3 GitHub mirror. The packager fetches them for a
@@ -44,6 +44,13 @@ beast through it. To move to a newer version, change the commit in `.pkgmeta`.
 ReagentRecipeVendorTooltips embeds it too: until the library's first release
 every copy has MINOR 1 and LibStub keeps whichever loads first, so both
 addons must pin the same commit.
+
+LibDataGrid-1.0 is Huntsworn's own grid library
+([github.com/Langmans/LibDataGrid-1.0](https://github.com/Langmans/LibDataGrid-1.0)):
+the Beasts tab's filter box, Builder and list of beasts, with filter text such as
+`[Level] BETWEEN 10 AND 20 AND [Speed] < 2` and sorting on several columns. An
+external pinned to a commit, like LibGoThere; while its MINOR is 1, every addon
+embedding it pins the same commit.
 
 The `.toc` lists Ace3 and LibStub as `OptionalDeps`, so a separately
 installed Ace3 loads first and LibStub keeps the newest copy of each library.

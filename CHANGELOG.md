@@ -177,9 +177,14 @@
   yellow skipped, grey known), its attack speed when not 2.0 and a button
   that shows the way there. Filters, kept in the profile: a name search,
   ability, family, diet, zone (all, the one you are in, or one), "You: has
-  already / not yet", in reach and rares. A scrollbar beside the rows. A
-  click on a column head (Beast, Family, Level, Distance, Speed) sorts by
-  it, a second click the other way round, with an arrow on that head.
+  already / not yet", in reach and rares. Under them, filter text that
+  filters further, such as `[Level] BETWEEN 10 AND 20 AND [Speed] < 2`
+  (also `[Teaches] CONTAINS Bite`, `[Rare] = true`), coloured as you read
+  it, with a Builder for AND/OR groups. The list is LibDataGrid-1.0's grid,
+  with a scrollbar: a click on a column head (Beast, Family, Level,
+  Distance, Speed) sorts by it, a second click the other way round, a third
+  back by level; Ctrl-click adds a second column, numbered on the heads.
+  The filter text and the sort are kept in the profile.
   Distance is in a straight line, in yards in its own column; beasts it
   cannot place stay last. Speed counts a beast without data as 2.0. A
   click on a beast opens its card: levels, family and diet, what it teaches,

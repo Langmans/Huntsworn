@@ -14,6 +14,7 @@
     <Include file="Libs\LibDBIcon-1.0\lib.xml"/>
     <Include file="Libs\LibAboutPanel-2.0\lib.xml"/>
     <Include file="Libs\LibGoThere-1.0\lib.xml"/>
+    <Include file="Libs\LibDataGrid-1.0\lib.xml"/>
     <Include file="Libs\Krowi_WorldMapButtons\Krowi_WorldMapButtons.xml"/>
     <!-- LibTameable without its data: each .toc names its client's own Data file. -->
     <Script file="Libs\LibTameable-1.0\LibTameable-1.0.lua"/>
