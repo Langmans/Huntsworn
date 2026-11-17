@@ -16,6 +16,7 @@ Libs\LibTameable-1.0\Data\EraFood.lua
 Locales\Locales.xml
 Core\Core.xml
 Data\Era\Trainers.lua
+Data\Era\MapOverlays.lua
 Data\Era\Ammo.lua
 Integrations\Integrations.xml
 Modules\Modules.xml

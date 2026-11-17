@@ -569,6 +569,29 @@ describe("the Beasts tab", function()
             assert.is_false(card.overlays[1].shown, "nothing explored")
         end)
 
+        it("draws the areas not explored yet dimmed, from the map's overlay data", function()
+            local client = hunter(10)
+            client.explored[ELWYNN] = {
+                { offsetX = 100, offsetY = 50, textureWidth = 300, textureHeight = 200, fileDataIDs = { 7, 8 } },
+            }
+            -- The same Goldshire, explored, and Northshire, not yet.
+            client.Addon.data.mapOverlays = {
+                [ELWYNN * 10] = { { 300, 200, 100, 50, 7, 8 }, { 120, 80, 500, 300, 11 } },
+            }
+            local card = open(tab(client), "Spider")
+            local shown = {}
+            for _, overlay in ipairs(card.overlays) do
+                if overlay.shown then shown[#shown + 1] = overlay end
+            end
+            assert.are.same({ 7, 8, 11 }, { shown[1].texture, shown[2].texture, shown[3].texture })
+            assert.are.same({ 1, 1, 1 }, shown[1].vertexColor, "explored: as the art")
+            assert.are.same(
+                { 0.4, 0.4, 0.4 },
+                { shown[3].vertexColor[1], shown[3].vertexColor[2], shown[3].vertexColor[3] }
+            )
+            assert.are.same({ 0, 120 / 128, 0, 80 / 128 }, shown[3].texCoord)
+        end)
+
         it("shows one map without map buttons, and dots without art where the client has none", function()
             local client = hunter(10)
             local panel = tab(client)

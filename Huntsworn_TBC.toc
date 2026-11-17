@@ -16,6 +16,7 @@ Libs\LibTameable-1.0\Data\TBCFood.lua
 Locales\Locales.xml
 Core\Core.xml
 Data\TBC\Trainers.lua
+Data\TBC\MapOverlays.lua
 Data\TBC\Ammo.lua
 Integrations\Integrations.xml
 Modules\Modules.xml

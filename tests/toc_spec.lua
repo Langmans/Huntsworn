@@ -53,18 +53,24 @@ describe("The .toc files", function()
         local _, _, _, forever = read("Huntsworn_Forever.toc")
         local _, _, _, era = read("Huntsworn_Vanilla.toc")
         local _, _, _, tbc = read("Huntsworn_TBC.toc")
-        assert.are.same(
-            { tameable .. "Forever.lua", "Data\\Forever\\Trainers.lua", "Data\\Forever\\Ammo.lua" },
-            forever
-        )
-        assert.are.same(
-            { tameable .. "Era.lua", tameable .. "EraFood.lua", "Data\\Era\\Trainers.lua", "Data\\Era\\Ammo.lua" },
-            era
-        )
+        assert.are.same({
+            tameable .. "Forever.lua",
+            "Data\\Forever\\Trainers.lua",
+            "Data\\Forever\\MapOverlays.lua",
+            "Data\\Forever\\Ammo.lua",
+        }, forever)
+        assert.are.same({
+            tameable .. "Era.lua",
+            tameable .. "EraFood.lua",
+            "Data\\Era\\Trainers.lua",
+            "Data\\Era\\MapOverlays.lua",
+            "Data\\Era\\Ammo.lua",
+        }, era)
         assert.are.same({
             tameable .. "TBC.lua",
             tameable .. "TBCFood.lua",
             "Data\\TBC\\Trainers.lua",
+            "Data\\TBC\\MapOverlays.lua",
             "Data\\TBC\\Ammo.lua",
         }, tbc)
         for _, name in ipairs({ "Huntsworn.toc", "Huntsworn_Mists.toc", "Huntsworn_Mainline.toc" }) do

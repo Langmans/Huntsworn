@@ -15,6 +15,7 @@ Libs\LibTameable-1.0\Data\Forever.lua
 Locales\Locales.xml
 Core\Core.xml
 Data\Forever\Trainers.lua
+Data\Forever\MapOverlays.lua
 Data\Forever\Ammo.lua
 Integrations\Integrations.xml
 Modules\Modules.xml

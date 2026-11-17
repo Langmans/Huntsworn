@@ -803,6 +803,10 @@ function NewClient(opts)
             if not client.mapArt[uiMapID] then return nil end
             return { { layerWidth = 1002, layerHeight = 668, tileWidth = 256, tileHeight = 256 } }
         end,
+        -- A map's art: its uiMapID times ten.
+        GetMapArtID = function(uiMapID)
+            return uiMapID * 10
+        end,
         GetMapArtLayerTextures = function(uiMapID, layerIndex)
             if not client.mapArt[uiMapID] or layerIndex ~= 1 then return nil end
             local files = {}

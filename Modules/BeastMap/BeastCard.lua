@@ -2,7 +2,8 @@ local _, ns = ...
 
 -- A beast's card in the Beasts tab (Beasts.lua): Back, its name, levels (rare, elite, attack speed
 -- off 2.0), family and diet, the ranks it teaches coloured by standing, its model, and the map of
--- where it lives: the zone's art (C_Map's art layer tiles) with a pin per spawn spot (beast.pins),
+-- where it lives: the zone's art (C_Map's art layer tiles), the explored areas over it and the rest
+-- dimmed, with a pin per spawn spot (beast.pins),
 -- the player's map first and a button per map when it lives on several. A dot click shows the way
 -- to that spot; Hunt starts the hunt (Hunt.lua) for the first rank it teaches that the hunter
 -- lacks, and stops it again. A beast in an instance has no map, only the instance's name.
@@ -17,6 +18,8 @@ local MAP_BUTTONS, DOT_SIZE, RING, BUTTON_HEIGHT = 4, 16, 1.5, 18
 local DISC = "Interface\\CHARACTERFRAME\\TempPortraitAlphaMask"
 local GOLD, DOT = { 1, 0.82, 0 }, { 0.2, 1, 0.2 }
 local QUESTION_MARK = 134400
+-- How dark an area not explored yet is drawn (its colour times this).
+local UNEXPLORED = 0.4
 ---@type table
 local NONE = {}
 
@@ -131,44 +134,79 @@ local function FileSize(size)
     return file
 end
 
----Lays the areas the hunter explored over the art, as the world map does
----(MapExplorationDataProvider): each area its own tiles from its offset, the last column and row
----cut. Areas the world map shows only under the mouse are left out.
+-- The explored areas' places (offsetX * 10000 + offsetY), refilled per map: an area of the overlay
+-- data there is explored.
+---@type table<number, true>
+local exploredAt = {}
+
+---Lays one area's tiles over the art from its offset, as the world map does
+---(MapExplorationPinMixin): the last column and row cut, their file the power of two that holds
+---them. A dimmed area is one not explored yet.
+---@param card AddonBeastCard
+---@param used number the overlay textures used so far
+---@param info UiMapLayerInfo the art's first layer
+---@param scale number
+---@param width number the area's width in art pixels
+---@param height number
+---@param x number its offset
+---@param y number
+---@param files number[] its tiles' files, row by row, from `first` on
+---@param first number
+---@param dim boolean
+---@return number used
+local function DrawArea(card, used, info, scale, width, height, x, y, files, first, dim)
+    local cols, rows = math.ceil(width / info.tileWidth), math.ceil(height / info.tileHeight)
+    local shade = dim and UNEXPLORED or 1
+    for row = 1, rows do
+        local tileHeight = row == rows and (height - (row - 1) * info.tileHeight) or info.tileHeight
+        local fileHeight = row == rows and FileSize(tileHeight) or info.tileHeight
+        for col = 1, cols do
+            local tileWidth = col == cols and (width - (col - 1) * info.tileWidth) or info.tileWidth
+            local fileWidth = col == cols and FileSize(tileWidth) or info.tileWidth
+            used = used + 1
+            local overlay = card.overlays[used]
+            if not overlay then
+                overlay = card.map:CreateTexture(nil, "ARTWORK", nil, 1)
+                card.overlays[used] = overlay
+            end
+            overlay:SetTexture(files[first + (row - 1) * cols + col - 1])
+            overlay:SetVertexColor(shade, shade, shade)
+            overlay:SetSize(tileWidth * scale, tileHeight * scale)
+            overlay:SetTexCoord(0, tileWidth / fileWidth, 0, tileHeight / fileHeight)
+            overlay:ClearAllPoints()
+            overlay:SetPoint(
+                "TOPLEFT",
+                (x + (col - 1) * info.tileWidth) * scale,
+                -(y + (row - 1) * info.tileHeight) * scale
+            )
+            overlay:Show()
+        end
+    end
+    return used
+end
+
+---Lays the areas the hunter explored over the art (C_MapExplorationInfo), then, dimmed, the
+---map's other areas from the overlay data (Data\<client>\MapOverlays.lua; none on a client
+---without it). Areas the world map shows only under the mouse are left out.
 ---@param card AddonBeastCard
 ---@param map number
 ---@param info UiMapLayerInfo the art's first layer
 ---@param scale number
 ---@return number used the overlay textures used
-local function FillExplored(card, map, info, scale)
+local function FillAreas(card, map, info, scale)
     local used = 0
+    wipe(exploredAt)
     for _, area in ipairs(C_MapExplorationInfo.GetExploredMapTextures(map) or NONE) do
+        exploredAt[area.offsetX * 10000 + area.offsetY] = true
         if not area.isShownByMouseOver then
-            local cols = math.ceil(area.textureWidth / info.tileWidth)
-            for row = 1, math.ceil(area.textureHeight / info.tileHeight) do
-                local lastRow = row == math.ceil(area.textureHeight / info.tileHeight)
-                local height = lastRow and (area.textureHeight - (row - 1) * info.tileHeight) or info.tileHeight
-                local fileHeight = lastRow and FileSize(height) or info.tileHeight
-                for col = 1, cols do
-                    local width = col == cols and (area.textureWidth - (col - 1) * info.tileWidth) or info.tileWidth
-                    local fileWidth = col == cols and FileSize(width) or info.tileWidth
-                    used = used + 1
-                    local overlay = card.overlays[used]
-                    if not overlay then
-                        overlay = card.map:CreateTexture(nil, "ARTWORK", nil, 1)
-                        card.overlays[used] = overlay
-                    end
-                    overlay:SetTexture(area.fileDataIDs[(row - 1) * cols + col])
-                    overlay:SetSize(width * scale, height * scale)
-                    overlay:SetTexCoord(0, width / fileWidth, 0, height / fileHeight)
-                    overlay:ClearAllPoints()
-                    overlay:SetPoint(
-                        "TOPLEFT",
-                        (area.offsetX + (col - 1) * info.tileWidth) * scale,
-                        -(area.offsetY + (row - 1) * info.tileHeight) * scale
-                    )
-                    overlay:Show()
-                end
-            end
+            local w, h, x, y = area.textureWidth, area.textureHeight, area.offsetX, area.offsetY
+            used = DrawArea(card, used, info, scale, w, h, x, y, area.fileDataIDs, 1, false)
+        end
+    end
+    local overlays = Addon.data.mapOverlays
+    for _, area in ipairs(overlays and overlays[C_Map.GetMapArtID(map)] or NONE) do
+        if not exploredAt[area[3] * 10000 + area[4]] then
+            used = DrawArea(card, used, info, scale, area[1], area[2], area[3], area[4], area, 5, true)
         end
     end
     return used
@@ -186,7 +224,7 @@ local function FillArt(card, map)
     local used, explored = 0, 0
     if info and files then
         local scale = MAP_WIDTH / info.layerWidth
-        explored = FillExplored(card, map, info, scale)
+        explored = FillAreas(card, map, info, scale)
         card.map:SetHeight(info.layerHeight * scale)
         local cols = math.ceil(info.layerWidth / info.tileWidth)
         for row = 1, math.ceil(info.layerHeight / info.tileHeight) do
