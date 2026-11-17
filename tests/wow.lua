@@ -757,6 +757,13 @@ function NewClient(opts)
     -- middle (y, x as UnitPosition gives them), size in yards and continent; map 1430 lies right
     -- east of Elwynn Forest, the player in Elwynn's middle.
     client.mapArt = { [1429] = true, [1420] = true }
+    -- The areas explored per map (C_MapExplorationInfo.GetExploredMapTextures): none by default.
+    client.explored = {}
+    C_MapExplorationInfo = {
+        GetExploredMapTextures = function(uiMapID)
+            return client.explored[uiMapID]
+        end,
+    }
     client.worldPos = { -9000, 400, 0 }
     client.mapPos = { 0.5, 0.5 }
     client.mapWorld = {

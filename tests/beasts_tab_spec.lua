@@ -509,6 +509,36 @@ describe("the Beasts tab", function()
             assert.are.equal("Spider", client.Addon:GetModule("BeastMap").tameTarget)
         end)
 
+        it("lays the areas the hunter explored over the map's art, as the world map does", function()
+            local client = hunter(10)
+            client.explored[ELWYNN] = {
+                -- Goldshire: 300 by 200 pixels at 100, 50; two tiles wide, the second cut to 44.
+                { offsetX = 100, offsetY = 50, textureWidth = 300, textureHeight = 200, fileDataIDs = { 7, 8 } },
+                -- Shown only under the mouse on the world map: left out.
+                {
+                    offsetX = 0,
+                    offsetY = 0,
+                    textureWidth = 100,
+                    textureHeight = 100,
+                    fileDataIDs = { 9 },
+                    isShownByMouseOver = true,
+                },
+            }
+            local card = open(tab(client), "Spider")
+            local shown = {}
+            for _, overlay in ipairs(card.overlays) do
+                if overlay.shown then shown[#shown + 1] = overlay end
+            end
+            assert.are.equal(2, #shown)
+            assert.are.same({ 7, 8 }, { shown[1].texture, shown[2].texture })
+            local scale = 410 / 1002
+            assert.are.same({ 256 * scale, 200 * scale }, { shown[1].width, shown[1].height })
+            assert.are.same({ 0, 44 / 64, 0, 200 / 256 }, shown[2].texCoord, "the cut tile's file is 64 wide")
+            client.explored[ELWYNN] = nil
+            card = open(tab(client), "Spider")
+            assert.is_false(card.overlays[1].shown, "nothing explored")
+        end)
+
         it("shows one map without map buttons, and dots without art where the client has none", function()
             local client = hunter(10)
             local panel = tab(client)

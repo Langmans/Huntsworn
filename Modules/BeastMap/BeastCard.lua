@@ -119,17 +119,74 @@ local function Dot(card, index)
     return dot
 end
 
+---The smallest power of two from 16 up that holds `size`: the file size of an explored area's
+---last, cut tile.
+---@param size number
+---@return number
+local function FileSize(size)
+    local file = 16
+    while file < size do
+        file = file * 2
+    end
+    return file
+end
+
+---Lays the areas the hunter explored over the art, as the world map does
+---(MapExplorationDataProvider): each area its own tiles from its offset, the last column and row
+---cut. Areas the world map shows only under the mouse are left out.
+---@param card AddonBeastCard
+---@param map number
+---@param info UiMapLayerInfo the art's first layer
+---@param scale number
+---@return number used the overlay textures used
+local function FillExplored(card, map, info, scale)
+    local used = 0
+    for _, area in ipairs(C_MapExplorationInfo.GetExploredMapTextures(map) or NONE) do
+        if not area.isShownByMouseOver then
+            local cols = math.ceil(area.textureWidth / info.tileWidth)
+            for row = 1, math.ceil(area.textureHeight / info.tileHeight) do
+                local lastRow = row == math.ceil(area.textureHeight / info.tileHeight)
+                local height = lastRow and (area.textureHeight - (row - 1) * info.tileHeight) or info.tileHeight
+                local fileHeight = lastRow and FileSize(height) or info.tileHeight
+                for col = 1, cols do
+                    local width = col == cols and (area.textureWidth - (col - 1) * info.tileWidth) or info.tileWidth
+                    local fileWidth = col == cols and FileSize(width) or info.tileWidth
+                    used = used + 1
+                    local overlay = card.overlays[used]
+                    if not overlay then
+                        overlay = card.map:CreateTexture(nil, "ARTWORK", nil, 1)
+                        card.overlays[used] = overlay
+                    end
+                    overlay:SetTexture(area.fileDataIDs[(row - 1) * cols + col])
+                    overlay:SetSize(width * scale, height * scale)
+                    overlay:SetTexCoord(0, width / fileWidth, 0, height / fileHeight)
+                    overlay:ClearAllPoints()
+                    overlay:SetPoint(
+                        "TOPLEFT",
+                        (area.offsetX + (col - 1) * info.tileWidth) * scale,
+                        -(area.offsetY + (row - 1) * info.tileHeight) * scale
+                    )
+                    overlay:Show()
+                end
+            end
+        end
+    end
+    return used
+end
+
 ---Lays the map's art tiles out at the map's width, the last column and row cut to the layer's
----size; none where the client has no art. Sets the map's height to the art's.
+---size, the explored areas over them; none where the client has no art. Sets the map's height to
+---the art's.
 ---@param card AddonBeastCard
 ---@param map number
 local function FillArt(card, map)
     local layers = C_Map.GetMapArtLayers(map)
     local info = layers and layers[1]
     local files = info and C_Map.GetMapArtLayerTextures(map, 1)
-    local used = 0
+    local used, explored = 0, 0
     if info and files then
         local scale = MAP_WIDTH / info.layerWidth
+        explored = FillExplored(card, map, info, scale)
         card.map:SetHeight(info.layerHeight * scale)
         local cols = math.ceil(info.layerWidth / info.tileWidth)
         for row = 1, math.ceil(info.layerHeight / info.tileHeight) do
@@ -151,6 +208,9 @@ local function FillArt(card, map)
     end
     for index = used + 1, #card.tiles do
         card.tiles[index]:Hide()
+    end
+    for index = explored + 1, #card.overlays do
+        card.overlays[index]:Hide()
     end
 end
 
@@ -271,7 +331,7 @@ function M.CreateBeastCard(panel, skin)
     local back = card.map:CreateTexture(nil, "BACKGROUND")
     back:SetAllPoints()
     back:SetColorTexture(0, 0, 0, 0.5)
-    card.tiles, card.dots, card.maps = {}, {}, {}
+    card.tiles, card.overlays, card.dots, card.maps = {}, {}, {}, {}
     for index = 1, MAP_BUTTONS do
         local button = CreateFrame("Button", nil, card) --[[@as AddonBeastMapButton]]
         button:SetHeight(BUTTON_HEIGHT)

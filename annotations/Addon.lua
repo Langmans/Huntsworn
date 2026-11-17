@@ -1019,6 +1019,7 @@
 ---@field mapName FontString the shown map's name, or the instance's
 ---@field map Frame the map's art and dots
 ---@field tiles Texture[] the art tiles, made as needed
+---@field overlays Texture[] the explored areas' tiles over the art, made as needed
 ---@field dots AddonBeastDot[] the spawn dots, made as needed
 ---@field maps AddonBeastMapButton[] a button per map the beast lives on
 ---@field npc number? the beast shown
