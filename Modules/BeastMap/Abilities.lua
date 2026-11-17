@@ -303,6 +303,11 @@ local function RankRow(panel, skin, index)
     row.toggle = row:CreateTexture(nil, "ARTWORK")
     row.toggle:SetSize(TOGGLE_SIZE, TOGGLE_SIZE)
     row.toggle:SetPoint("LEFT", 2, 0)
+    local plus, minus
+    if skin.Folds then
+        plus, minus = skin.Folds()
+    end
+    row.plus, row.minus = plus or PLUS, minus or MINUS
     row.rank = Text(row, skin)
     row.rank:SetPoint("LEFT", TOGGLE_SIZE + 4, 0)
     row.level = Text(row, skin, "RIGHT")
@@ -395,7 +400,7 @@ local function FillRank(row, spellID, expanded)
     PlaceText(row, false)
     local folds = M.Lacking(spellID) ~= nil and #rank.teachers > 1
     row.toggle:SetShown(folds)
-    row.toggle:SetTexture(expanded and MINUS or PLUS)
+    row.toggle:SetTexture(expanded and row.minus or row.plus)
     if M.Lacking(spellID) and #rank.teachers == 0 then
         row.teachers, row.best = nil, nil
         row.text:SetText(L.BEASTMAP_NO_TEACHER)

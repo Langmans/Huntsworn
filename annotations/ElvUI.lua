@@ -23,6 +23,7 @@
 ---ElvUI's engine (E), ElvUI[1].
 ---@class ElvUIEngine
 ---@field media ElvUIMedia?
+---@field Media {Textures: {PlusButton: string?, MinusButton: string?}}? its own art files
 ---@field db ElvUIProfile? the profile's settings, its plugins' among them
 ---@field GetModule fun(self: ElvUIEngine, name: string, silent: boolean?): ElvUISkins?
 

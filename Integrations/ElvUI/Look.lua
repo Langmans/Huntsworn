@@ -107,6 +107,14 @@ local function ScrollBar(bar)
     if skins and skins.HandleSliderFrame then skins:HandleSliderFrame(bar) end
 end
 
+---ElvUI's plus and minus, as its Skins module puts on Blizzard's collapse buttons.
+---@return string? plus
+---@return string? minus
+local function Folds()
+    local textures = E.Media and E.Media.Textures
+    if textures then return textures.PlusButton, textures.MinusButton end
+end
+
 ---A picker or a check box's square: ElvUI's default backdrop and border.
 ---@param frame Frame
 local function Field(frame)
@@ -139,4 +147,5 @@ Addon:RegisterButtonHolderSkin("elvui", {
     EditBox = EditBox,
     ScrollBar = ScrollBar,
     Field = Field,
+    Folds = Folds,
 })

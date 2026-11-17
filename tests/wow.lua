@@ -1928,6 +1928,8 @@ function NewClient(opts)
         ElvUI = {
             {
                 media = { normFont = "Fonts\\PTSansNarrow.ttf", rgbvaluecolor = { 0.1, 0.7, 1 } },
+                -- Its own art (E.Media, capital M, next to the settings-based E.media).
+                Media = { Textures = { PlusButton = "ElvUI\\PlusButton", MinusButton = "ElvUI\\MinusButton" } },
                 -- Its profile: Crop Icons (0 none, 1 or 2 more and more).
                 db = { general = { cropIcon = 2 } },
                 GetModule = function(_, name)

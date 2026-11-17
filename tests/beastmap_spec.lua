@@ -1019,6 +1019,16 @@ describe("Beast Map", function()
             assert.is_true(panel.ranks[2].stripe.shown)
         end)
 
+        it("draws the plus and minus as ElvUI's own with ElvUI loaded", function()
+            local client = hunter(10, { elvui = true })
+            local panel = tab(client)
+            click(panel.rows[3])
+            local claw3 = panel.ranks[3]
+            assert.are.equal(ElvUI[1].Media.Textures.PlusButton, claw3.toggle.texture)
+            click(claw3)
+            assert.are.equal(ElvUI[1].Media.Textures.MinusButton, claw3.toggle.texture)
+        end)
+
         it("unfolds a rank to every beast that teaches it, each with its own hunt button", function()
             local client = hunter(10)
             local panel = tab(client)
@@ -1027,7 +1037,9 @@ describe("Beast Map", function()
             assert.is_true(claw3.toggle.shown, "three beasts teach Claw 3")
             assert.is_false(panel.ranks[1].toggle.shown, "one teaches Claw 1")
             assert.is_false(panel.ranks[4].shown)
+            assert.are.equal("Interface\\Buttons\\UI-PlusButton-Up", claw3.toggle.texture)
             click(claw3)
+            assert.are.equal("Interface\\Buttons\\UI-MinusButton-Up", claw3.toggle.texture)
             assert.are.same({ "Rank 1", "Rank 2", "Rank 3", "", "", "" }, texts(panel.ranks, "rank"))
             assert.are.same(
                 { "Rare Cat in Tirisfal Glades", "Late Cat", "High Cat in Elwynn Forest" },

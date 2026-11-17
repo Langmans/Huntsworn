@@ -197,6 +197,7 @@
 ---@field Button (fun(button: Button))? a push button (UIPanelButtonTemplate), in the UI's own look
 ---@field EditBox (fun(box: EditBox))? a text box (InputBoxTemplate), in the UI's own look
 ---@field ScrollBar (fun(bar: Slider))? a list's scrollbar (a plain vertical Slider), in the UI's own look
+---@field Folds (fun(): (string|number), (string|number))? the plus and minus of a row that unfolds, in the UI's own art
 ---@field Field (fun(frame: Frame))? a picker or a check box's square: the UI's own box behind it, instead of Huntsworn's dark one
 
 ---The button skin choices in the profile.
@@ -921,6 +922,8 @@
 ---@field ability number?
 
 ---@class AddonRankRow: Button
+---@field plus string|number the toggle's art while folded, in the look's own art
+---@field minus string|number the toggle's art while unfolded
 ---@field rank FontString
 ---@field level FontString
 ---@field text FontString the nearest teacher, or known
