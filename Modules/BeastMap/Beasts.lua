@@ -408,7 +408,13 @@ local function DistanceCells(skin)
         local cell = region --[[@as AddonBeastDistanceCell]]
         local npc = row --[[@as number]]
         local distance = yards[npc]
-        cell.label:SetText(distance ~= math.huge and L.BEASTS_YARDS:format(math.floor(distance + 0.5)) or "")
+        if distance == math.huge then
+            cell.label:SetText("")
+        elseif distance >= 999.5 then
+            cell.label:SetText(L.BEASTS_KILOYARDS:format(distance / 1000))
+        else
+            cell.label:SetText(L.BEASTS_YARDS:format(math.floor(distance + 0.5)))
+        end
         cell.go:SetShown(Addon.data.beasts[npc].pins ~= nil)
     end
 

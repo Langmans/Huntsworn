@@ -290,6 +290,18 @@ describe("the Beasts tab", function()
         assert.are.equal("Family: Cat", panel.pickers.family.label.text)
     end)
 
+    it("shortens a distance from 1000 yards on to thousands with one decimal", function()
+        local client = hunter(10)
+        -- Elwynn Forest ten times as large: its beasts thousands of yards away.
+        client.mapWorld[ELWYNN].width, client.mapWorld[ELWYNN].height = 34700, 23140
+        local panel = tab(client)
+        click(head(panel, "distance"))
+        local yards = column(panel, "distance")
+        for i = 1, 3 do
+            assert.is_truthy(yards[i]:match("^%d+%.%dk yd$"), yards[i])
+        end
+    end)
+
     it("sorts by straight-line distance with a click on Distance's head, and back by Level's", function()
         local client = hunter(10)
         local panel = tab(client)

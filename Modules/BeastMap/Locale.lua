@@ -228,6 +228,8 @@ L.BEASTS_COLUMN_DISTANCE = "Distance"
 L.BEASTS_COLUMN_RARE = "Rare"
 -- A beast's distance in that column. %d: yards.
 L.BEASTS_YARDS = "%d yd"
+-- From 1000 yards on, in thousands. %.1f: thousands of yards, such as 10.6.
+L.BEASTS_KILOYARDS = "%.1fk yd"
 -- A rare beast's name in the list. %s: the name.
 L.BEASTS_RARE_NAME = "%s (rare)"
 -- The tooltip of a row's map button. %s: the beast's name.
