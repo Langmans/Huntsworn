@@ -1023,7 +1023,7 @@
 ---@field spellID number? the first rank it teaches that the hunter lacks: Hunt's
 
 ---@class AddonBeastDot: Button
----@field disc Texture
+---@field icon Texture the rank's icon, round
 ---@field card AddonBeastCard
 ---@field x number percent
 ---@field y number

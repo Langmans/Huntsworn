@@ -2,7 +2,7 @@ local _, ns = ...
 
 -- A beast's card in the Beasts tab (Beasts.lua): Back, its name, levels (rare, elite, attack speed
 -- off 2.0), family and diet, the ranks it teaches coloured by standing, its model, and the map of
--- where it lives: the zone's art (C_Map's art layer tiles) with a dot per spawn spot (beast.pins),
+-- where it lives: the zone's art (C_Map's art layer tiles) with a pin per spawn spot (beast.pins),
 -- the player's map first and a button per map when it lives on several. A dot click shows the way
 -- to that spot; Hunt starts the hunt (Hunt.lua) for the first rank it teaches that the hunter
 -- lacks, and stops it again. A beast in an instance has no map, only the instance's name.
@@ -13,9 +13,10 @@ local L = Addon.L
 local M = Addon:GetModule("BeastMap") --[[@as AddonBeastMap]]
 
 local LEFT_WIDTH, MODEL_SIZE, MAP_X, MAP_TOP, MAP_WIDTH = 220, 190, 236, 52, 410
-local MAP_BUTTONS, DOT_SIZE, BUTTON_HEIGHT = 4, 10, 18
+local MAP_BUTTONS, DOT_SIZE, RING, BUTTON_HEIGHT = 4, 16, 1.5, 18
 local DISC = "Interface\\CHARACTERFRAME\\TempPortraitAlphaMask"
 local GOLD, DOT = { 1, 0.82, 0 }, { 0.2, 1, 0.2 }
+local QUESTION_MARK = 134400
 ---@type table
 local NONE = {}
 
@@ -99,10 +100,18 @@ local function Dot(card, index)
     if dot then return dot end
     dot = CreateFrame("Button", nil, card.map) --[[@as AddonBeastDot]]
     dot:SetSize(DOT_SIZE, DOT_SIZE)
-    dot.disc = dot:CreateTexture(nil, "OVERLAY")
-    dot.disc:SetAllPoints()
-    dot.disc:SetTexture(DISC)
-    dot.disc:SetVertexColor(DOT[1], DOT[2], DOT[3])
+    -- A dark ring under the round icon, so it stands out on light and dark map art alike.
+    local ring = dot:CreateTexture(nil, "ARTWORK")
+    ring:SetAllPoints()
+    ring:SetTexture(DISC)
+    ring:SetVertexColor(0, 0, 0)
+    dot.icon = dot:CreateTexture(nil, "OVERLAY")
+    dot.icon:SetPoint("TOPLEFT", RING, -RING)
+    dot.icon:SetPoint("BOTTOMRIGHT", -RING, RING)
+    local mask = dot:CreateMaskTexture()
+    mask:SetAllPoints(dot.icon)
+    mask:SetTexture(DISC, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+    dot.icon:AddMaskTexture(mask)
     dot:SetHighlightTexture(DISC, "ADD")
     dot.card = card
     dot:SetScript("OnClick", OnDotClick)
@@ -145,15 +154,18 @@ local function FillArt(card, map)
     end
 end
 
----A dot per spawn spot on the map; the rest hidden.
+---A pin per spawn spot on the map, with the icon of the rank the card is about (as the beast's pin
+---on the world map); the rest hidden.
 ---@param card AddonBeastCard
 ---@param flat number[] x1, y1, x2, y2, ... in percent
-local function FillDots(card, flat)
+---@param icon number|string|nil
+local function FillDots(card, flat, icon)
     local width, height = MAP_WIDTH, card.map:GetHeight()
     local used = 0
     for i = 1, #flat, 2 do
         used = used + 1
         local dot = Dot(card, used)
+        dot.icon:SetTexture(icon or QUESTION_MARK)
         dot.x, dot.y = flat[i], flat[i + 1]
         dot:ClearAllPoints()
         dot:SetPoint("CENTER", card.map, "TOPLEFT", dot.x / 100 * width, -dot.y / 100 * height)
@@ -168,7 +180,8 @@ end
 ---instance, the instance's name.
 ---@param card AddonBeastCard
 ---@param beast AddonBeast
-local function FillMap(card, beast)
+---@param icon number|string|nil the pins' icon
+local function FillMap(card, beast, icon)
     local list = Maps(beast)
     if not tContains(list, card.shownMap) then card.shownMap = list[1] end
     local map = card.shownMap
@@ -185,12 +198,12 @@ local function FillMap(card, beast)
     end
     if not map then
         card.mapName:SetText(L.BEASTS_INSIDE:format(C_Map.GetAreaInfo((beast.zones or NONE)[1]) or "?"))
-        FillDots(card, NONE)
+        FillDots(card, NONE, icon)
         return
     end
     card.mapName:SetText(MapName(map))
     FillArt(card, map)
-    FillDots(card, (beast.pins --[[@as table<number, number[]> ]])[map])
+    FillDots(card, (beast.pins --[[@as table<number, number[]> ]])[map], icon)
 end
 
 ---Hunt clicked: the hunt for the card's rank, or its end.
@@ -307,5 +320,6 @@ function M.FillBeastCard(card, npc)
     end
     card.hunt:SetShown(card.spellID ~= nil)
     card.hunt:SetText(M:IsHunting(npc, card.spellID) and L.BEASTS_HUNT_STOP or L.BEASTS_HUNT)
-    FillMap(card, beast)
+    local _, icon = Addon.SpellInfo(card.spellID or spells[1])
+    FillMap(card, beast, icon)
 end
