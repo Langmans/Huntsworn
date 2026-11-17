@@ -629,8 +629,8 @@
 ---@field diet string "all", or a Huntsworn.diets value the beast's family eats
 ---@field zone string|number "all", "here" (the player's map), a uiMapID, or minus an instance's AreaTable ID
 ---@field you "all"|"has"|"lacks" every rank the beast teaches known already, or some not yet
----@field reach boolean only beasts at or below the hunter's level
----@field rares boolean only rare beasts
+---@field reach string|boolean beasts at or below the hunter's level: "all", "only" or "without" (true or false saved before)
+---@field rares string|boolean rare beasts: "all", "only" or "without" (true or false saved before)
 ---@field grid AddonBeastsGrid the filter text and the sort of the tab's grid
 
 ---The Beasts tab's grid state (LibDataGrid-1.0's view), kept in the profile.
@@ -982,7 +982,8 @@
 ---@class AddonCheckText: Button
 ---@field label FontString
 ---@field box Frame the square, in the look's Field or the game's check box
----@field check Texture shown while on
+---@field check Texture shown while on (Beasts tab: while "only")
+---@field cross Texture? shown while "without" (Beasts tab's three-state switches)
 
 ---A family's ability in the Families tab; a click shows its teachers in the Abilities tab.
 ---@class AddonFamilyAbilityRow: Button

@@ -8,7 +8,7 @@ local _, ns = ...
 --
 -- Two kinds of filter, both kept in the profile. On top, quick ones: a name search, ability,
 -- family, diet, zone (all, the player's own, one), whether the hunter has every rank already or not
--- yet, in reach (at most the hunter's level), rares only. Under them, filter text and its Builder
+-- yet, in reach (at most the hunter's level) and rares, each only, without or all. Under them, filter text and its Builder
 -- (LibDataGrid-1.0), which filter what the quick ones let through: `[Level] BETWEEN 10 AND 20 AND
 -- [Speed] < 2`. The list is LibDataGrid's grid: a click on a head sorts by it (up, down, off), Ctrl
 -- adds a second column; unsorted, by level then name. A click on a row opens the beast's card
@@ -37,6 +37,11 @@ local ALL = "all"
 local ZONE_HERE = "here"
 -- The You filter's choices.
 local YOU = { all = ALL, has = "has", lacks = "lacks" }
+-- The In reach and Rares switches' states, and the one a click goes to: all, only, without.
+local TRI = { all = ALL, only = "only", without = "without" }
+local NEXT = { [TRI.all] = TRI.only, [TRI.only] = TRI.without, [TRI.without] = TRI.all }
+local CROSS = "Interface\\RaidFrame\\ReadyCheck-NotReady"
+local SWITCHES = { "reach", "rares" }
 -- The grid's columns, by key (the names filter text also takes).
 local COLUMNS = {
     name = "name",
@@ -155,6 +160,23 @@ local function Filter()
     return M:Settings().beasts
 end
 
+---A switch's state in the filter: a TRI value; one saved as on (true) or off before the switches
+---had three states reads as only or all.
+---@param value boolean|string|nil
+---@return string
+local function Tri(value)
+    if value == true then return TRI.only end
+    return TRI[value] or TRI.all
+end
+
+---Whether a beast passes a three-state switch, given whether it is what the switch is about.
+---@param state string a TRI value
+---@param is boolean
+---@return boolean
+local function PassesTri(state, is)
+    return state == TRI.all or (state == TRI.only) == is
+end
+
 ---Whether a family eats a kind of food.
 ---@param familyID number
 ---@param food string
@@ -183,8 +205,8 @@ end
 ---@param here number? the player's map
 ---@return boolean
 local function Passes(npc, beast, filter, search, here)
-    if filter.rares and not beast.rare then return false end
-    if filter.reach and beast.minLevel > M:PlayerLevel() then return false end
+    if not PassesTri(Tri(filter.rares), beast.rare == true) then return false end
+    if not PassesTri(Tri(filter.reach), beast.minLevel <= M:PlayerLevel()) then return false end
     if filter.family ~= ALL and beast.family ~= filter.family then return false end
     if
         filter.diet ~= ALL and not Eats(beast.family, filter.diet --[[@as string]])
@@ -536,7 +558,8 @@ local function Changed(panel)
     Addon:RefreshWindow("beasts")
 end
 
----A switch with its word: In reach, Rares.
+---A switch with its word: In reach, Rares. A click goes from all to only (a tick) to without (a
+---cross) and back to all.
 ---@param panel AddonBeastsPanel
 ---@param skin AddonButtonHolderSkin
 ---@param label string
@@ -561,9 +584,13 @@ local function Switch(panel, skin, label, key)
     button.check = button.box:CreateTexture(nil, "OVERLAY")
     button.check:SetTexture(CHECK_MARK)
     button.check:SetAllPoints()
+    button.cross = button.box:CreateTexture(nil, "OVERLAY")
+    button.cross:SetTexture(CROSS)
+    button.cross:SetPoint("TOPLEFT", 2, -2)
+    button.cross:SetPoint("BOTTOMRIGHT", -2, 2)
     button:SetScript("OnClick", function()
         local filter = Filter()
-        filter[key] = not filter[key]
+        filter[key] = NEXT[Tri(filter[key])]
         Changed(panel)
     end)
     return button
@@ -728,8 +755,11 @@ local function FillFilters(panel, filter)
     table.insert(zone.values, 2, ZONE_HERE)
     table.insert(zone.texts, 2, L.BEASTS_ZONE_HERE:format(here and ZoneName(here) or "?"))
     filter.zone = Addon.FillPicker(zone, filter.zone)
-    panel.reach.check:SetShown(filter.reach)
-    panel.rares.check:SetShown(filter.rares)
+    for _, key in ipairs(SWITCHES) do
+        local state = Tri(filter[key])
+        panel[key].check:SetShown(state == TRI.only)
+        panel[key].cross:SetShown(state == TRI.without)
+    end
     if panel.search:GetText() ~= filter.search then panel.search:SetText(filter.search) end
     panel.hint:SetShown(filter.search == "")
 end
